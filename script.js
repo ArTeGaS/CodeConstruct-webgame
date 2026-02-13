@@ -1046,6 +1046,7 @@ function normalizeTasks(input) {
 
       return {
         id: String(task.id || "task"),
+        number: Number(task.number),
         title: String(task.title || "Завдання"),
         description: String(task.description || "Збери програму з блоків коду."),
         lines
