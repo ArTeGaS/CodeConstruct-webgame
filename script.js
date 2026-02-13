@@ -1,22 +1,24 @@
 ﻿const programLines = [
-  { id: "line-1", text: 'word = input("Введи слово: ")', indent: 0 },
-  { id: "line-2", text: 'vowels = "аеєиіїоуюя"', indent: 0 },
-  { id: "line-3", text: "count = 0", indent: 0 },
-  { id: "line-4", text: "for ch in word:", indent: 0 },
-  { id: "line-5", text: "if ch.lower() in vowels:", indent: 1 },
-  { id: "line-6", text: "count += 1", indent: 2 },
-  { id: "line-7", text: 'print("Голосних:", count)', indent: 1 }
+  { id: "line-1", text: 'word = input("Введи слово: ")' },
+  { id: "line-2", text: 'vowels = "аеєиіїоуюя"' },
+  { id: "line-3", text: "count = 0" },
+  { id: "line-4", text: "for ch in word:" },
+  { id: "line-5", text: "if ch.lower() in vowels:" },
+  { id: "line-6", text: "count += 1" },
+  { id: "line-7", text: 'print("Голосних:", count)' }
 ];
 
-const slotRules = [
-  { allowedIds: ["line-1"], indent: 0 },
-  { allowedIds: ["line-2", "line-3"], indent: 0 },
-  { allowedIds: ["line-2", "line-3"], indent: 0 },
-  { allowedIds: ["line-4"], indent: 0 },
-  { allowedIds: ["line-5"], indent: 1 },
-  { allowedIds: ["line-6"], indent: 2 },
-  { allowedIds: ["line-7"], indent: 1 }
-];
+const PY_KEYWORDS = new Set([
+  "False", "None", "True", "and", "as", "assert", "async", "await", "break", "case", "class",
+  "continue", "def", "del", "elif", "else", "except", "finally", "for", "from", "global",
+  "if", "import", "in", "is", "lambda", "match", "nonlocal", "not", "or", "pass", "raise",
+  "return", "try", "while", "with", "yield"
+]);
+
+const PY_GLOBALS = new Set([
+  "input", "print", "len", "range", "str", "int", "float", "bool", "list", "dict", "set",
+  "tuple", "sum", "min", "max", "abs", "enumerate", "any", "all"
+]);
 
 const MAX_INDENT = 4;
 const lineById = new Map(programLines.map((line) => [line.id, line]));
@@ -37,7 +39,7 @@ const resetBtn = document.getElementById("reset-btn");
 const shuffleBtn = document.getElementById("shuffle-btn");
 
 render();
-setResult("Збери програму: порядок + відступи. Для рядків 2/3 порядок не критичний.", "neutral");
+setResult("Збери програму: перевіряємо синтаксис Python (блоки, відступи, використання змінних).", "neutral");
 
 editorSlotsEl.addEventListener("dragover", (event) => {
   const zone = event.target.closest(".slot-drop-zone");
@@ -261,34 +263,183 @@ function updateIndent(slotIndex, diff) {
 function checkSolution() {
   const issues = [];
 
-  for (let i = 0; i < slotRules.length; i += 1) {
-    const rule = slotRules[i];
-    const actualId = state.slots[i];
-
-    if (!actualId) {
-      issues.push(`Рядок ${i + 1}: порожній.`);
-      continue;
-    }
-
-    if (!rule.allowedIds.includes(actualId)) {
-      issues.push(`Рядок ${i + 1}: неправильний блок.`);
-    }
-
-    if (state.indents[i] !== rule.indent) {
-      issues.push(`Рядок ${i + 1}: відступ ${state.indents[i]}, очікується ${rule.indent}.`);
-    }
+  if (state.slots.some((id) => !id)) {
+    issues.push("Заповни всі рядки редактора.");
   }
 
+  const assembled = buildAssembledProgram();
+  issues.push(...validateBlockSyntax(assembled));
+  issues.push(...validateNameDependencies(assembled));
+
   if (issues.length === 0) {
-    setResult("Готово. Рішення правильне. Рядки 2 і 3 можуть бути в будь-якому порядку.", "ok");
+    setResult("Готово. Синтаксис зібрано правильно.", "ok");
     renderSolutionPreview();
     return;
   }
 
-  const previewIssues = issues.slice(0, 4).join("\n");
-  const extra = issues.length > 4 ? `\n...і ще ${issues.length - 4} помилок.` : "";
+  const previewIssues = issues.slice(0, 5).join("\n");
+  const extra = issues.length > 5 ? `\n...і ще ${issues.length - 5} помилок.` : "";
   setResult(`${previewIssues}${extra}`, "error");
   previewEl.hidden = true;
+}
+
+function buildAssembledProgram() {
+  return state.slots
+    .map((id, index) => {
+      if (!id) {
+        return null;
+      }
+      const line = lineById.get(id);
+      const analysis = analyzeLine(line.text);
+      return {
+        lineNumber: index + 1,
+        text: line.text,
+        indent: state.indents[index],
+        opensBlock: analysis.opensBlock,
+        defines: analysis.defines,
+        uses: analysis.uses
+      };
+    })
+    .filter(Boolean);
+}
+
+function validateBlockSyntax(lines) {
+  const issues = [];
+  if (lines.length === 0) {
+    return issues;
+  }
+
+  if (lines[0].indent !== 0) {
+    issues.push("Рядок 1: програма має починатися без відступу.");
+  }
+
+  const indentStack = [0];
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    const prev = i > 0 ? lines[i - 1] : null;
+
+    if (line.indent < 0) {
+      issues.push(`Рядок ${line.lineNumber}: некоректний відступ.`);
+      continue;
+    }
+
+    if (prev && line.indent > prev.indent) {
+      if (!prev.opensBlock) {
+        issues.push(`Рядок ${line.lineNumber}: зайвий відступ без попереднього ':'`);
+      }
+      if (line.indent !== prev.indent + 1) {
+        issues.push(`Рядок ${line.lineNumber}: відступ має збільшуватися лише на 1 рівень.`);
+      }
+      indentStack.push(line.indent);
+      continue;
+    }
+
+    while (indentStack.length > 1 && line.indent < indentStack[indentStack.length - 1]) {
+      indentStack.pop();
+    }
+
+    if (line.indent !== indentStack[indentStack.length - 1]) {
+      issues.push(`Рядок ${line.lineNumber}: некоректний рівень відступу.`);
+    }
+
+    if (prev && prev.opensBlock && line.indent <= prev.indent) {
+      issues.push(`Рядок ${prev.lineNumber}: після ':' потрібен вкладений блок.`);
+    }
+  }
+
+  const lastLine = lines[lines.length - 1];
+  if (lastLine.opensBlock) {
+    issues.push(`Рядок ${lastLine.lineNumber}: після ':' бракує вкладених рядків.`);
+  }
+
+  return dedupe(issues);
+}
+
+function validateNameDependencies(lines) {
+  const issues = [];
+  const knownNames = new Set(PY_GLOBALS);
+
+  for (const line of lines) {
+    for (const name of line.uses) {
+      if (!knownNames.has(name)) {
+        issues.push(`Рядок ${line.lineNumber}: '${name}' використано до оголошення.`);
+      }
+    }
+    for (const name of line.defines) {
+      knownNames.add(name);
+    }
+  }
+
+  return dedupe(issues);
+}
+
+function analyzeLine(rawText) {
+  const text = rawText.trim();
+  const withoutStrings = stripStringLiterals(text);
+  const withoutAttributes = withoutStrings.replace(/\.[A-Za-z_][A-Za-z0-9_]*/g, "");
+  const defines = new Set();
+  const uses = new Set();
+
+  const forMatch = withoutAttributes.match(/^for\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\s+(.+):$/);
+  if (forMatch) {
+    defines.add(forMatch[1]);
+    addNames(forMatch[2], uses);
+    return {
+      opensBlock: true,
+      defines: [...defines],
+      uses: [...uses]
+    };
+  }
+
+  const augAssignMatch = withoutAttributes.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*([+\-*/%]=)\s*(.+)$/);
+  if (augAssignMatch) {
+    const target = augAssignMatch[1];
+    uses.add(target);
+    addNames(augAssignMatch[3], uses);
+    defines.add(target);
+    return {
+      opensBlock: text.endsWith(":"),
+      defines: [...defines],
+      uses: [...uses]
+    };
+  }
+
+  const assignMatch = withoutAttributes.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$/);
+  if (assignMatch) {
+    defines.add(assignMatch[1]);
+    addNames(assignMatch[2], uses);
+    return {
+      opensBlock: text.endsWith(":"),
+      defines: [...defines],
+      uses: [...uses]
+    };
+  }
+
+  addNames(withoutAttributes, uses);
+
+  return {
+    opensBlock: text.endsWith(":"),
+    defines: [...defines],
+    uses: [...uses]
+  };
+}
+
+function addNames(fragment, targetSet) {
+  const tokens = fragment.match(/\b[A-Za-z_][A-Za-z0-9_]*\b/g) || [];
+  for (const token of tokens) {
+    if (!PY_KEYWORDS.has(token)) {
+      targetSet.add(token);
+    }
+  }
+}
+
+function stripStringLiterals(text) {
+  return text.replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g, "");
+}
+
+function dedupe(items) {
+  return [...new Set(items)];
 }
 
 function renderSolutionPreview() {
