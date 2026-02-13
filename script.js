@@ -1,6 +1,21 @@
 ﻿const tasks = normalizeTasks(window.TASKS_DATA || []);
 const BLOCK_HEADER_REGEX = /^(if|elif|else|for|while|def|class|try|except|finally|with|match|case)\b.*:\s*$/;
 const MAX_INDENT = 6;
+const PY_KEYWORDS = new Set([
+  "False", "None", "True", "and", "as", "assert", "async", "await", "break", "case", "class",
+  "continue", "def", "del", "elif", "else", "except", "finally", "for", "from", "global",
+  "if", "import", "in", "is", "lambda", "match", "nonlocal", "not", "or", "pass", "raise",
+  "return", "try", "while", "with", "yield"
+]);
+const PY_BUILTINS = new Set([
+  "input", "print", "int", "float", "str", "bool", "len", "range", "sum", "min", "max", "abs",
+  "round", "list", "dict", "set", "tuple", "enumerate", "zip", "sorted", "reversed", "map",
+  "filter", "any", "all"
+]);
+const LOOP_KEYWORDS = new Set(["for", "while"]);
+const CONDITIONAL_BLOCK_KEYWORDS = new Set([
+  "if", "elif", "else", "for", "while", "try", "except", "finally", "with", "match", "case"
+]);
 
 const state = {
   activeTaskIndex: 0,
@@ -329,10 +344,10 @@ function checkSolution() {
   }
 
   const assembled = buildAssembledProgram();
-  issues.push(...validateBlockSyntax(assembled));
+  issues.push(...validateProgramSemantics(assembled));
 
   if (issues.length === 0) {
-    setResult("Готово. Базовий синтаксис Python зібрано правильно.", "ok");
+    setResult("Готово. Базовий синтаксис Python і залежності імен коректні.", "ok");
     renderSolutionPreview();
     return;
   }
@@ -356,10 +371,19 @@ function buildAssembledProgram() {
         lineNumber: index + 1,
         text: line.text,
         indent: state.indents[index],
-        opensBlock: isBlockHeader(line.text)
+        analysis: parseLineAnalysis(line.text)
       };
     })
     .filter(Boolean);
+}
+
+function validateProgramSemantics(lines) {
+  const issues = [];
+  issues.push(...validateBlockSyntax(lines));
+  issues.push(...validateKeywordChains(lines));
+  issues.push(...validateNameDependencies(lines));
+  issues.push(...validateRecursiveBaseCases(lines));
+  return dedupe(issues);
 }
 
 function validateBlockSyntax(lines) {
@@ -384,7 +408,7 @@ function validateBlockSyntax(lines) {
     }
 
     if (prev && line.indent > prev.indent) {
-      if (!prev.opensBlock) {
+      if (!prev.analysis.opensBlock) {
         issues.push(`Рядок ${line.lineNumber}: зайвий відступ без попереднього блоку.`);
       }
       if (line.indent !== prev.indent + 1) {
@@ -402,17 +426,504 @@ function validateBlockSyntax(lines) {
       issues.push(`Рядок ${line.lineNumber}: некоректний рівень відступу.`);
     }
 
-    if (prev && prev.opensBlock && line.indent <= prev.indent) {
+    if (prev && prev.analysis.opensBlock && line.indent <= prev.indent) {
       issues.push(`Рядок ${prev.lineNumber}: після ':' потрібен вкладений рядок.`);
     }
   }
 
   const lastLine = lines[lines.length - 1];
-  if (lastLine.opensBlock) {
+  if (lastLine.analysis.opensBlock) {
     issues.push(`Рядок ${lastLine.lineNumber}: після ':' бракує вкладеного блоку.`);
   }
 
   return dedupe(issues);
+}
+
+function validateKeywordChains(lines) {
+  const issues = [];
+  const blockStack = [];
+  const ifChains = new Set();
+  const tryChains = new Map();
+
+  for (const line of lines) {
+    const keyword = line.analysis.keyword;
+
+    while (blockStack.length > 0 && line.indent <= blockStack[blockStack.length - 1].indent) {
+      blockStack.pop();
+    }
+
+    for (const indent of [...ifChains]) {
+      if (indent > line.indent) {
+        ifChains.delete(indent);
+      }
+    }
+    for (const [indent, state] of [...tryChains.entries()]) {
+      if (indent > line.indent) {
+        if (!state.hasHandler) {
+          issues.push(`Рядок ${state.lineNumber}: після try потрібен except або finally.`);
+        }
+        tryChains.delete(indent);
+      }
+    }
+
+    if (ifChains.has(line.indent) && keyword !== "elif" && keyword !== "else") {
+      ifChains.delete(line.indent);
+    }
+
+    if (tryChains.has(line.indent) && keyword !== "except" && keyword !== "finally") {
+      const pendingTry = tryChains.get(line.indent);
+      if (!pendingTry.hasHandler) {
+        issues.push(`Рядок ${pendingTry.lineNumber}: після try потрібен except або finally.`);
+      }
+      tryChains.delete(line.indent);
+    }
+
+    if ((keyword === "elif" || keyword === "else") && !ifChains.has(line.indent)) {
+      issues.push(`Рядок ${line.lineNumber}: '${keyword}' без відповідного if.`);
+    }
+    if (keyword === "elif") {
+      ifChains.add(line.indent);
+    } else if (keyword === "else") {
+      ifChains.delete(line.indent);
+    } else if (keyword === "if") {
+      ifChains.add(line.indent);
+    }
+
+    if ((keyword === "except" || keyword === "finally") && !tryChains.has(line.indent)) {
+      issues.push(`Рядок ${line.lineNumber}: '${keyword}' без відповідного try.`);
+    }
+    if (keyword === "except") {
+      const state = tryChains.get(line.indent);
+      if (state) {
+        state.hasHandler = true;
+      }
+    } else if (keyword === "finally") {
+      const state = tryChains.get(line.indent);
+      if (state) {
+        state.hasHandler = true;
+      }
+      tryChains.delete(line.indent);
+    } else if (keyword === "try") {
+      tryChains.set(line.indent, { hasHandler: false, lineNumber: line.lineNumber });
+    }
+
+    const insideFunction = blockStack.some((block) => block.keyword === "def");
+    const insideLoop = blockStack.some((block) => LOOP_KEYWORDS.has(block.keyword));
+
+    if (line.analysis.isReturn && !insideFunction) {
+      issues.push(`Рядок ${line.lineNumber}: return може бути лише всередині def.`);
+    }
+    if (line.analysis.isBreak && !insideLoop) {
+      issues.push(`Рядок ${line.lineNumber}: break може бути лише всередині циклу.`);
+    }
+    if (line.analysis.isContinue && !insideLoop) {
+      issues.push(`Рядок ${line.lineNumber}: continue може бути лише всередині циклу.`);
+    }
+
+    if (line.analysis.opensBlock) {
+      blockStack.push({ indent: line.indent, keyword });
+    }
+  }
+
+  for (const state of tryChains.values()) {
+    if (!state.hasHandler) {
+      issues.push(`Рядок ${state.lineNumber}: після try потрібен except або finally.`);
+    }
+  }
+
+  return dedupe(issues);
+}
+
+function validateNameDependencies(lines) {
+  const issues = [];
+  const globalKnown = new Set(PY_BUILTINS);
+  const scopeStack = [{ indent: -1, kind: "module", locals: new Set() }];
+  const blockStack = [];
+  const conditionalScopes = [];
+
+  for (const line of lines) {
+    while (blockStack.length > 0 && line.indent <= blockStack[blockStack.length - 1].indent) {
+      blockStack.pop();
+    }
+    while (conditionalScopes.length > 0 && line.indent <= conditionalScopes[conditionalScopes.length - 1].indent) {
+      conditionalScopes.pop();
+    }
+    while (scopeStack.length > 1 && line.indent <= scopeStack[scopeStack.length - 1].indent) {
+      scopeStack.pop();
+    }
+
+    const visible = collectVisibleNames(globalKnown, scopeStack, conditionalScopes);
+    for (const name of line.analysis.uses) {
+      if (!visible.has(name)) {
+        issues.push(`Рядок ${line.lineNumber}: '${name}' використано до оголошення.`);
+      }
+    }
+
+    for (const name of line.analysis.defines) {
+      registerDefinition(name, globalKnown, scopeStack, conditionalScopes);
+    }
+
+    if (line.analysis.opensBlock && line.analysis.keyword === "def") {
+      scopeStack.push({
+        indent: line.indent,
+        kind: "def",
+        locals: new Set(line.analysis.defParams)
+      });
+    } else if (line.analysis.opensBlock && line.analysis.keyword === "class") {
+      scopeStack.push({
+        indent: line.indent,
+        kind: "class",
+        locals: new Set()
+      });
+    }
+
+    if (line.analysis.opensBlock) {
+      blockStack.push({ indent: line.indent, keyword: line.analysis.keyword });
+      if (CONDITIONAL_BLOCK_KEYWORDS.has(line.analysis.keyword)) {
+        conditionalScopes.push({
+          indent: line.indent,
+          names: new Set()
+        });
+      }
+    }
+  }
+
+  return dedupe(issues);
+}
+
+function validateRecursiveBaseCases(lines) {
+  const issues = [];
+  const defStack = [];
+
+  function finalizeContext(context) {
+    if (!context) {
+      return;
+    }
+    if (!context.baseCaseRecursiveLines.length || !context.topLevelPlainReturnLines.length) {
+      return;
+    }
+    for (const lineNumber of context.baseCaseRecursiveLines) {
+      issues.push(
+        `Рядок ${lineNumber}: підозріла рекурсія в базовій умові. Перевір базовий return у функції '${context.name}'.`
+      );
+    }
+  }
+
+  for (const line of lines) {
+    while (defStack.length > 0 && line.indent <= defStack[defStack.length - 1].indent) {
+      finalizeContext(defStack.pop());
+    }
+
+    const activeDef = defStack[defStack.length - 1];
+    if (activeDef) {
+      while (
+        activeDef.baseIfStack.length > 0 &&
+        line.indent <= activeDef.baseIfStack[activeDef.baseIfStack.length - 1].indent
+      ) {
+        activeDef.baseIfStack.pop();
+      }
+
+      if (line.analysis.keyword === "if" && line.indent === activeDef.indent + 1) {
+        const condition = extractIfCondition(line.text);
+        if (isLikelyBaseCaseCondition(condition, activeDef.params)) {
+          activeDef.baseIfStack.push({ indent: line.indent });
+        }
+      }
+
+      if (line.analysis.isReturn) {
+        const isRecursiveReturn = hasFunctionCall(line.text, activeDef.name);
+        if (
+          isRecursiveReturn &&
+          activeDef.baseIfStack.length > 0 &&
+          line.indent > activeDef.baseIfStack[activeDef.baseIfStack.length - 1].indent
+        ) {
+          activeDef.baseCaseRecursiveLines.push(line.lineNumber);
+        } else if (!isRecursiveReturn && line.indent === activeDef.indent + 1) {
+          activeDef.topLevelPlainReturnLines.push(line.lineNumber);
+        }
+      }
+    }
+
+    if (line.analysis.keyword === "def" && line.analysis.opensBlock) {
+      const defName = line.analysis.defines[0];
+      if (defName) {
+        defStack.push({
+          name: defName,
+          indent: line.indent,
+          params: line.analysis.defParams.slice(),
+          baseIfStack: [],
+          baseCaseRecursiveLines: [],
+          topLevelPlainReturnLines: []
+        });
+      }
+    }
+  }
+
+  while (defStack.length > 0) {
+    finalizeContext(defStack.pop());
+  }
+
+  return dedupe(issues);
+}
+
+function extractIfCondition(text) {
+  const match = text.trim().match(/^if\s+(.+)\s*:\s*$/u);
+  return match ? match[1] : "";
+}
+
+function isLikelyBaseCaseCondition(condition, params) {
+  if (!condition) {
+    return false;
+  }
+  const cleaned = stripStringLiterals(condition).replace(/\s+/gu, " ").trim();
+  if (!cleaned) {
+    return false;
+  }
+  const paramPattern = params.length
+    ? params.map((name) => escapeRegExp(name)).join("|")
+    : "[A-Za-z_][A-Za-z0-9_]*";
+  const leftPattern = new RegExp(`\\b(?:${paramPattern})\\s*(?:<=|<|==)\\s*(?:0|1)\\b`, "u");
+  const rightPattern = new RegExp(`\\b(?:0|1)\\s*(?:>=|>|==)\\s*(?:${paramPattern})\\b`, "u");
+  return leftPattern.test(cleaned) || rightPattern.test(cleaned);
+}
+
+function hasFunctionCall(text, functionName) {
+  if (!functionName) {
+    return false;
+  }
+  const cleaned = stripStringLiterals(text);
+  const callPattern = new RegExp(`\\b${escapeRegExp(functionName)}\\s*\\(`, "u");
+  return callPattern.test(cleaned);
+}
+
+function escapeRegExp(source) {
+  return source.replace(/[.*+?^${}()|[\]\\]/gu, "\\$&");
+}
+
+function collectVisibleNames(globalKnown, scopeStack, conditionalScopes) {
+  const names = new Set(globalKnown);
+  for (const scope of scopeStack) {
+    for (const name of scope.locals) {
+      names.add(name);
+    }
+  }
+  for (const scope of conditionalScopes) {
+    for (const name of scope.names) {
+      names.add(name);
+    }
+  }
+  return names;
+}
+
+function registerDefinition(name, globalKnown, scopeStack, conditionalScopes) {
+  if (!name) {
+    return;
+  }
+  if (scopeStack.length > 1) {
+    scopeStack[scopeStack.length - 1].locals.add(name);
+    return;
+  }
+  if (conditionalScopes.length > 0) {
+    conditionalScopes[conditionalScopes.length - 1].names.add(name);
+    return;
+  }
+  globalKnown.add(name);
+}
+
+function parseLineAnalysis(rawText) {
+  const text = rawText.trim();
+  const keywordMatch = text.match(/^([A-Za-z_][A-Za-z0-9_]*)\b/);
+  const keyword = keywordMatch ? keywordMatch[1] : "";
+  const analysis = {
+    keyword,
+    opensBlock: isBlockHeader(text),
+    defines: [],
+    uses: [],
+    defParams: [],
+    isReturn: /^return\b/u.test(text),
+    isBreak: /^break\b/u.test(text),
+    isContinue: /^continue\b/u.test(text)
+  };
+
+  for (const expression of extractFStringExpressions(text)) {
+    addNames(expression, analysis.uses);
+  }
+
+  const sanitized = stripStringLiterals(text).replace(/#.*/u, "");
+  const withoutAttributes = sanitized.replace(/\.[A-Za-z_][A-Za-z0-9_]*/gu, "");
+
+  if (keyword === "import") {
+    const importBody = sanitized.replace(/^import\s+/u, "");
+    for (const part of splitArgs(importBody)) {
+      const importMatch = part.trim().match(/^([A-Za-z_][A-Za-z0-9_.]*)(?:\s+as\s+([A-Za-z_][A-Za-z0-9_]*))?$/u);
+      if (!importMatch) {
+        continue;
+      }
+      const alias = importMatch[2] || importMatch[1].split(".")[0];
+      analysis.defines.push(alias);
+    }
+    return finalizeAnalysis(analysis);
+  }
+
+  if (keyword === "from") {
+    const fromMatch = sanitized.match(/^from\s+([A-Za-z_][A-Za-z0-9_.]*)\s+import\s+(.+)$/u);
+    if (fromMatch) {
+      for (const item of splitArgs(fromMatch[2])) {
+        const trimmed = item.trim();
+        if (!trimmed || trimmed === "*") {
+          continue;
+        }
+        const importMatch = trimmed.match(/^([A-Za-z_][A-Za-z0-9_]*)(?:\s+as\s+([A-Za-z_][A-Za-z0-9_]*))?$/u);
+        if (!importMatch) {
+          continue;
+        }
+        analysis.defines.push(importMatch[2] || importMatch[1]);
+      }
+    }
+    return finalizeAnalysis(analysis);
+  }
+
+  if (keyword === "def") {
+    const defMatch = withoutAttributes.match(/^def\s+([A-Za-z_][A-Za-z0-9_]*)\s*\((.*)\)\s*:/u);
+    if (defMatch) {
+      analysis.defines.push(defMatch[1]);
+      const params = splitArgs(defMatch[2]);
+      for (const param of params) {
+        const trimmed = param.trim();
+        if (!trimmed) {
+          continue;
+        }
+        const parts = trimmed.split("=");
+        const lhs = parts[0].trim().replace(/^\*+/u, "");
+        const paramNameMatch = lhs.match(/^([A-Za-z_][A-Za-z0-9_]*)/u);
+        if (paramNameMatch) {
+          analysis.defParams.push(paramNameMatch[1]);
+        }
+        if (parts.length > 1) {
+          addNames(parts.slice(1).join("=").trim(), analysis.uses);
+        }
+      }
+    }
+    return finalizeAnalysis(analysis);
+  }
+
+  if (keyword === "class") {
+    const classMatch = withoutAttributes.match(/^class\s+([A-Za-z_][A-Za-z0-9_]*)(?:\((.*)\))?\s*:/u);
+    if (classMatch) {
+      analysis.defines.push(classMatch[1]);
+      if (classMatch[2]) {
+        addNames(classMatch[2], analysis.uses);
+      }
+    }
+    return finalizeAnalysis(analysis);
+  }
+
+  if (keyword === "for") {
+    const forMatch = withoutAttributes.match(/^for\s+(.+?)\s+in\s+(.+)\s*:\s*$/u);
+    if (forMatch) {
+      for (const target of parseAssignmentTargets(forMatch[1])) {
+        analysis.defines.push(target);
+      }
+      addNames(forMatch[2], analysis.uses);
+    }
+    return finalizeAnalysis(analysis);
+  }
+
+  const augAssignMatch = withoutAttributes.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*[+\-*/%&|^]=\s*(.+)$/u);
+  if (augAssignMatch) {
+    analysis.uses.push(augAssignMatch[1]);
+    addNames(augAssignMatch[2], analysis.uses);
+    analysis.defines.push(augAssignMatch[1]);
+    return finalizeAnalysis(analysis);
+  }
+
+  const assignMatch = withoutAttributes.match(/^(.+?)\s*=\s*(.+)$/u);
+  if (assignMatch && !/==|!=|<=|>=/u.test(withoutAttributes)) {
+    for (const target of parseAssignmentTargets(assignMatch[1])) {
+      analysis.defines.push(target);
+    }
+    addNames(assignMatch[2], analysis.uses);
+    return finalizeAnalysis(analysis);
+  }
+
+  addNames(withoutAttributes, analysis.uses);
+  return finalizeAnalysis(analysis);
+}
+
+function finalizeAnalysis(analysis) {
+  analysis.defines = dedupe(analysis.defines);
+  analysis.uses = dedupe(analysis.uses.filter((name) => !analysis.defParams.includes(name)));
+  analysis.defParams = dedupe(analysis.defParams);
+  return analysis;
+}
+
+function parseAssignmentTargets(lhs) {
+  const cleaned = lhs.replace(/[()\[\]]/gu, " ");
+  const chunks = cleaned.split(",").map((part) => part.trim()).filter(Boolean);
+  const names = [];
+  for (const chunk of chunks) {
+    const match = chunk.match(/^([A-Za-z_][A-Za-z0-9_]*)$/u);
+    if (match) {
+      names.push(match[1]);
+    }
+  }
+  return names;
+}
+
+function splitArgs(rawArgs) {
+  const args = [];
+  let current = "";
+  let depth = 0;
+  for (const char of rawArgs) {
+    if (char === "," && depth === 0) {
+      args.push(current);
+      current = "";
+      continue;
+    }
+    if (char === "(" || char === "[" || char === "{") {
+      depth += 1;
+    } else if (char === ")" || char === "]" || char === "}") {
+      depth = Math.max(0, depth - 1);
+    }
+    current += char;
+  }
+  if (current.trim() !== "") {
+    args.push(current);
+  }
+  return args;
+}
+
+function addNames(fragment, collector) {
+  const tokens = fragment.match(/\b[A-Za-z_][A-Za-z0-9_]*\b/gu) || [];
+  for (const token of tokens) {
+    if (!PY_KEYWORDS.has(token)) {
+      collector.push(token);
+    }
+  }
+}
+
+function extractFStringExpressions(text) {
+  const expressions = [];
+  const stringMatches =
+    text.match(/\b[fF][rRuUbB]*"(?:\\.|[^"\\])*"|\b[fF][rRuUbB]*'(?:\\.|[^'\\])*'/gu) || [];
+
+  for (const matched of stringMatches) {
+    const noPrefix = matched.replace(/^[fFrRuUbB]+/u, "");
+    if (noPrefix.length < 2) {
+      continue;
+    }
+    const body = noPrefix.slice(1, -1);
+    const braceMatches = body.match(/\{[^{}]+\}/gu) || [];
+    for (const brace of braceMatches) {
+      expressions.push(brace.slice(1, -1));
+    }
+  }
+
+  return expressions;
+}
+
+function stripStringLiterals(text) {
+  return text.replace(/(?:\b[furbFURB]+)?"(?:\\.|[^"\\])*"|(?:\b[furbFURB]+)?'(?:\\.|[^'\\])*'/gu, "");
 }
 
 function isBlockHeader(rawText) {
