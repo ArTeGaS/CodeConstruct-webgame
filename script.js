@@ -1,4 +1,7 @@
 ﻿const tasks = normalizeTasks(window.TASKS_DATA || []);
+const allLinesData = normalizeAllLines(window.ALL_LINES_DATA || []);
+const allLinesById = new Map(allLinesData.map((line) => [line.id, line]));
+const EXTRA_LINES_PER_TASK = 10;
 const BLOCK_HEADER_REGEX = /^(if|elif|else|for|while|def|class|try|except|finally|with|match|case)\b.*:\s*$/;
 const MAX_INDENT = 6;
 const PY_KEYWORDS = new Set([
@@ -21,6 +24,7 @@ const state = {
   activeTaskIndex: 0,
   slots: [],
   indents: [],
+  bankPoolIds: [],
   bankOrder: [],
   selectedBlockId: null
 };
@@ -177,7 +181,8 @@ function loadTask(index) {
 
   state.slots = new Array(task.lines.length).fill(null);
   state.indents = new Array(task.lines.length).fill(0);
-  state.bankOrder = shuffle(task.lines.map((line) => line.id));
+  state.bankPoolIds = generateTaskBankIds(task, EXTRA_LINES_PER_TASK);
+  state.bankOrder = shuffle(state.bankPoolIds.slice());
   state.selectedBlockId = null;
 
   taskTitleEl.textContent = task.title;
@@ -194,7 +199,17 @@ function getActiveTask() {
 }
 
 function getActiveLineMap() {
-  return new Map(getActiveTask().lines.map((line) => [line.id, line]));
+  const map = new Map();
+  for (const id of state.bankPoolIds) {
+    const line = allLinesById.get(id);
+    if (line) {
+      map.set(id, line);
+    }
+  }
+  for (const line of getActiveTask().lines) {
+    map.set(line.id, line);
+  }
+  return map;
 }
 
 function renderTaskList() {
@@ -343,6 +358,8 @@ function checkSolution() {
     issues.push("Заповни всі рядки редактора.");
   }
 
+  issues.push(...validateSelectedTaskLines());
+
   const assembled = buildAssembledProgram();
   issues.push(...validateProgramSemantics(assembled));
 
@@ -356,6 +373,23 @@ function checkSolution() {
   const extra = issues.length > 5 ? `\n...і ще ${issues.length - 5} помилок.` : "";
   setResult(`${previewIssues}${extra}`, "error");
   previewEl.hidden = true;
+}
+
+function validateSelectedTaskLines() {
+  const issues = [];
+  const taskLineIds = new Set(getActiveTask().lines.map((line) => line.id));
+
+  for (let i = 0; i < state.slots.length; i += 1) {
+    const id = state.slots[i];
+    if (!id) {
+      continue;
+    }
+    if (!taskLineIds.has(id)) {
+      issues.push(`Рядок ${i + 1}: це зайвий блок з іншого завдання.`);
+    }
+  }
+
+  return dedupe(issues);
 }
 
 function buildAssembledProgram() {
@@ -953,7 +987,7 @@ function resetPuzzle() {
   state.slots = new Array(task.lines.length).fill(null);
   state.indents = new Array(task.lines.length).fill(0);
   state.selectedBlockId = null;
-  state.bankOrder = shuffle(task.lines.map((line) => line.id));
+  state.bankOrder = shuffle(state.bankPoolIds.slice());
   render();
   setResult("Стан очищено. Збери програму ще раз.", "neutral");
   previewEl.hidden = true;
@@ -1018,4 +1052,32 @@ function normalizeTasks(input) {
       };
     })
     .filter((task) => task.lines.length > 0);
+}
+
+function normalizeAllLines(input) {
+  if (!Array.isArray(input)) {
+    return [];
+  }
+
+  return input
+    .map((line) => ({
+      id: String(line?.id || ""),
+      text: typeof line?.text === "string" ? line.text.trim() : "",
+      taskId: String(line?.taskId || "")
+    }))
+    .filter((line) => line.id && line.text);
+}
+
+function generateTaskBankIds(task, extrasCount) {
+  const ownIds = task.lines.map((line) => line.id);
+  const ownIdSet = new Set(ownIds);
+  const ownTextSet = new Set(task.lines.map((line) => line.text));
+
+  const foreignCandidates = allLinesData
+    .filter((line) => line.taskId !== String(task.id) && !ownIdSet.has(line.id) && !ownTextSet.has(line.text))
+    .map((line) => line.id);
+
+  const shuffledForeign = shuffle(foreignCandidates);
+  const extraIds = shuffledForeign.slice(0, Math.max(0, Math.min(extrasCount, shuffledForeign.length)));
+  return ownIds.concat(extraIds);
 }
