@@ -1140,8 +1140,6 @@ function renderTaskExamples(task) {
 
     const code = document.createElement("pre");
     code.className = "task-example-code";
-    code.textContent = example;
-
     code.textContent = example.output;
 
     item.append(label, inputTitle, inputCode, outputTitle, code);
