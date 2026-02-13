@@ -1,4 +1,4 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="uk">
 <head>
   <meta charset="utf-8">
@@ -10,43 +10,84 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">CodeConstruct • Python</div>
-    <div class="actions">
-      <button id="check-btn" class="btn btn-primary" type="button">Перевірити рішення</button>
-      <button id="reset-btn" class="btn" type="button">Скинути</button>
-      <button id="shuffle-btn" class="btn" type="button">Перемішати блоки</button>
+  <div class="vscode-shell">
+    <header class="titlebar">
+      <div class="titlebar-left">
+        <span class="vscode-mark" aria-hidden="true">▣</span>
+        <nav class="menu-bar" aria-label="Головне меню">
+          <span>File</span>
+          <span>Edit</span>
+          <span>Selection</span>
+          <span>View</span>
+        </nav>
+      </div>
+      <div class="titlebar-center">
+        <div class="command-box" aria-label="Командний рядок">CodeConstruct</div>
+      </div>
+      <div class="titlebar-right">
+        <span class="window-dot"></span>
+        <span class="window-dot"></span>
+        <span class="window-dot"></span>
+      </div>
+    </header>
+
+    <div class="workbench">
+      <nav class="activity-bar" aria-label="Activity bar">
+        <button class="activity-btn is-active" type="button" aria-label="Explorer">📁</button>
+        <button class="activity-btn" type="button" aria-label="Search">🔎</button>
+        <button class="activity-btn" type="button" aria-label="Git">⑂</button>
+        <button class="activity-btn" type="button" aria-label="Extensions">🧩</button>
+      </nav>
+
+      <aside class="sidebar">
+        <div class="sidebar-header">
+          <h1>EXPLORER</h1>
+        </div>
+        <div class="project-name">CODECONSTRUCT</div>
+        <ul class="file-list" aria-label="Список файлів проекту">
+          <li class="file-item is-active">&lt;/&gt; main.py</li>
+          <li class="file-item"># README.md</li>
+          <li class="file-item"># tests.md</li>
+        </ul>
+      </aside>
+
+      <main class="editor-host">
+        <header class="editor-tabs">
+          <div class="tab is-active">main.py</div>
+          <div class="editor-actions">
+            <button id="check-btn" class="btn btn-primary" type="button">Перевірити</button>
+            <button id="reset-btn" class="btn" type="button">Скинути</button>
+            <button id="shuffle-btn" class="btn" type="button">Перемішати</button>
+          </div>
+        </header>
+
+        <div class="editor-grid">
+          <section class="editor-panel">
+            <div class="panel-head">EDITOR</div>
+            <p class="hint">Перетягни рядки в правильному порядку. Для 2 і 3 рядків порядок довільний.</p>
+            <ol id="editor-slots" class="editor-slots"></ol>
+            <div id="result" class="result" role="status" aria-live="polite"></div>
+            <pre id="solution-preview" class="solution-preview" hidden></pre>
+          </section>
+
+          <aside class="bank-panel">
+            <div class="panel-head">LINES</div>
+            <p class="hint">
+              Desktop: перетягни блоки мишкою.<br>
+              Mobile: тап по блоку, потім тап по рядку.
+            </p>
+            <div id="code-bank" class="code-bank"></div>
+          </aside>
+        </div>
+      </main>
     </div>
-  </header>
 
-  <main class="workspace">
-    <aside class="panel files-panel">
-      <h2>Файли проекту</h2>
-      <p class="hint">Працюємо з `main.py`.</p>
-      <ul class="file-list">
-        <li class="file-item is-active">main.py</li>
-        <li class="file-item">README.md</li>
-        <li class="file-item">tests.md</li>
-      </ul>
-    </aside>
-
-    <section class="panel editor-panel">
-      <h2>Вікно редактора</h2>
-      <p class="hint">Збери програму в правильному порядку та вистав відступи.</p>
-      <ol id="editor-slots" class="editor-slots"></ol>
-      <div id="result" class="result" role="status" aria-live="polite"></div>
-      <pre id="solution-preview" class="solution-preview" hidden></pre>
-    </section>
-
-    <aside class="panel bank-panel">
-      <h2>Рядки коду проекту</h2>
-      <p class="hint">
-        Desktop: перетягуй блоки мишкою.<br>
-        Mobile: тап по блоку, потім тап по рядку в редакторі.
-      </p>
-      <div id="code-bank" class="code-bank"></div>
-    </aside>
-  </main>
+    <footer class="statusbar">
+      <span>Python Puzzle Mode</span>
+      <span>UTF-8</span>
+      <span>Spaces: 4</span>
+    </footer>
+  </div>
 
   <script src="script.js"></script>
 </body>

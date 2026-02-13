@@ -1,4 +1,4 @@
-const programLines = [
+﻿const programLines = [
   { id: "line-1", text: 'word = input("Введи слово: ")', indent: 0 },
   { id: "line-2", text: 'vowels = "аеєиіїоуюя"', indent: 0 },
   { id: "line-3", text: "count = 0", indent: 0 },
@@ -6,6 +6,16 @@ const programLines = [
   { id: "line-5", text: "if ch.lower() in vowels:", indent: 1 },
   { id: "line-6", text: "count += 1", indent: 2 },
   { id: "line-7", text: 'print("Голосних:", count)', indent: 1 }
+];
+
+const slotRules = [
+  { allowedIds: ["line-1"], indent: 0 },
+  { allowedIds: ["line-2", "line-3"], indent: 0 },
+  { allowedIds: ["line-2", "line-3"], indent: 0 },
+  { allowedIds: ["line-4"], indent: 0 },
+  { allowedIds: ["line-5"], indent: 1 },
+  { allowedIds: ["line-6"], indent: 2 },
+  { allowedIds: ["line-7"], indent: 1 }
 ];
 
 const MAX_INDENT = 4;
@@ -27,7 +37,7 @@ const resetBtn = document.getElementById("reset-btn");
 const shuffleBtn = document.getElementById("shuffle-btn");
 
 render();
-setResult("Збери програму: порядок + відступи. Потім натисни «Перевірити рішення».", "neutral");
+setResult("Збери програму: порядок + відступи. Для рядків 2/3 порядок не критичний.", "neutral");
 
 editorSlotsEl.addEventListener("dragover", (event) => {
   const zone = event.target.closest(".slot-drop-zone");
@@ -174,7 +184,7 @@ function renderEditor() {
 
     const clearBtn = createToolButton("×", "clear-slot", i);
     clearBtn.disabled = !slotLineId;
-    clearBtn.title = "Повернути блок вправо";
+    clearBtn.title = "Повернути блок праворуч";
 
     tools.append(leftBtn, rightBtn, clearBtn);
     slot.append(index, zone, tools);
@@ -190,7 +200,7 @@ function renderBank() {
   if (available.length === 0) {
     const donePlaceholder = document.createElement("div");
     donePlaceholder.className = "bank-placeholder";
-    donePlaceholder.textContent = "Усі блоки вже в редакторі. Перевір рішення або поправ порядок.";
+    donePlaceholder.textContent = "Усі блоки вже в редакторі. Перевір рішення або підкоригуй порядок.";
     codeBankEl.appendChild(donePlaceholder);
     return;
   }
@@ -250,24 +260,27 @@ function updateIndent(slotIndex, diff) {
 
 function checkSolution() {
   const issues = [];
-  for (let i = 0; i < programLines.length; i += 1) {
-    const expected = programLines[i];
+
+  for (let i = 0; i < slotRules.length; i += 1) {
+    const rule = slotRules[i];
     const actualId = state.slots[i];
 
     if (!actualId) {
       issues.push(`Рядок ${i + 1}: порожній.`);
       continue;
     }
-    if (actualId !== expected.id) {
-      issues.push(`Рядок ${i + 1}: не той блок.`);
+
+    if (!rule.allowedIds.includes(actualId)) {
+      issues.push(`Рядок ${i + 1}: неправильний блок.`);
     }
-    if (state.indents[i] !== expected.indent) {
-      issues.push(`Рядок ${i + 1}: відступ ${state.indents[i]}, а треба ${expected.indent}.`);
+
+    if (state.indents[i] !== rule.indent) {
+      issues.push(`Рядок ${i + 1}: відступ ${state.indents[i]}, очікується ${rule.indent}.`);
     }
   }
 
   if (issues.length === 0) {
-    setResult("Готово. Порядок і відступи правильні.", "ok");
+    setResult("Готово. Рішення правильне. Рядки 2 і 3 можуть бути в будь-якому порядку.", "ok");
     renderSolutionPreview();
     return;
   }
