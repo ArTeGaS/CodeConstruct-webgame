@@ -43,12 +43,9 @@
         <div class="sidebar-header">
           <h1>EXPLORER</h1>
         </div>
-        <div class="project-name">CODECONSTRUCT</div>
-        <ul class="file-list" aria-label="Список файлів проекту">
-          <li class="file-item is-active">&lt;/&gt; main.py</li>
-          <li class="file-item"># README.md</li>
-          <li class="file-item"># tests.md</li>
-        </ul>
+        <div class="project-name">PYTHON TASKS</div>
+        <p id="task-count" class="sidebar-hint"></p>
+        <ul id="task-list" class="file-list" aria-label="Список завдань"></ul>
       </aside>
 
       <main class="editor-host">
@@ -64,7 +61,9 @@
         <div class="editor-grid">
           <section class="editor-panel">
             <div class="panel-head">EDITOR</div>
-            <p class="hint">Перетягни рядки в правильному порядку. Валідація перевіряє синтаксис Python: блоки, відступи, залежності змінних.</p>
+            <div id="task-title" class="task-title"></div>
+            <p id="task-description" class="hint"></p>
+            <p class="hint">Перетягни рядки в правильному порядку. Валідація перевіряє базовий синтаксис Python: блоки та відступи.</p>
             <ol id="editor-slots" class="editor-slots"></ol>
             <div id="result" class="result" role="status" aria-live="polite"></div>
             <pre id="solution-preview" class="solution-preview" hidden></pre>
@@ -89,6 +88,7 @@
     </footer>
   </div>
 
+  <script src="tasks-data.js"></script>
   <script src="script.js"></script>
 </body>
 </html>

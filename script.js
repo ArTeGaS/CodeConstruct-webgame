@@ -1,32 +1,12 @@
-﻿const programLines = [
-  { id: "line-1", text: 'word = input("Введи слово: ")' },
-  { id: "line-2", text: 'vowels = "аеєиіїоуюя"' },
-  { id: "line-3", text: "count = 0" },
-  { id: "line-4", text: "for ch in word:" },
-  { id: "line-5", text: "if ch.lower() in vowels:" },
-  { id: "line-6", text: "count += 1" },
-  { id: "line-7", text: 'print("Голосних:", count)' }
-];
-
-const PY_KEYWORDS = new Set([
-  "False", "None", "True", "and", "as", "assert", "async", "await", "break", "case", "class",
-  "continue", "def", "del", "elif", "else", "except", "finally", "for", "from", "global",
-  "if", "import", "in", "is", "lambda", "match", "nonlocal", "not", "or", "pass", "raise",
-  "return", "try", "while", "with", "yield"
-]);
-
-const PY_GLOBALS = new Set([
-  "input", "print", "len", "range", "str", "int", "float", "bool", "list", "dict", "set",
-  "tuple", "sum", "min", "max", "abs", "enumerate", "any", "all"
-]);
-
-const MAX_INDENT = 4;
-const lineById = new Map(programLines.map((line) => [line.id, line]));
+﻿const tasks = normalizeTasks(window.TASKS_DATA || []);
+const BLOCK_HEADER_REGEX = /^(if|elif|else|for|while|def|class|try|except|finally|with|match|case)\b.*:\s*$/;
+const MAX_INDENT = 6;
 
 const state = {
-  slots: new Array(programLines.length).fill(null),
-  indents: new Array(programLines.length).fill(0),
-  bankOrder: shuffle(programLines.map((line) => line.id)),
+  activeTaskIndex: 0,
+  slots: [],
+  indents: [],
+  bankOrder: [],
   selectedBlockId: null
 };
 
@@ -37,111 +17,187 @@ const previewEl = document.getElementById("solution-preview");
 const checkBtn = document.getElementById("check-btn");
 const resetBtn = document.getElementById("reset-btn");
 const shuffleBtn = document.getElementById("shuffle-btn");
+const taskListEl = document.getElementById("task-list");
+const taskTitleEl = document.getElementById("task-title");
+const taskDescriptionEl = document.getElementById("task-description");
+const taskCountEl = document.getElementById("task-count");
 
-render();
-setResult("Збери програму: перевіряємо синтаксис Python (блоки, відступи, використання змінних).", "neutral");
+init();
 
-editorSlotsEl.addEventListener("dragover", (event) => {
-  const zone = event.target.closest(".slot-drop-zone");
-  if (!zone) {
+function init() {
+  if (!tasks.length) {
+    disableActions();
+    setResult("Не знайдено жодного завдання. Перевір файл tasks-data.js.", "error");
     return;
   }
-  event.preventDefault();
-  zone.classList.add("is-over");
-});
 
-editorSlotsEl.addEventListener("dragleave", (event) => {
-  const zone = event.target.closest(".slot-drop-zone");
-  if (zone) {
+  taskCountEl.textContent = `${tasks.length} завдання`;
+  renderTaskList();
+  loadTask(0);
+
+  editorSlotsEl.addEventListener("dragover", (event) => {
+    const zone = event.target.closest(".slot-drop-zone");
+    if (!zone) {
+      return;
+    }
+    event.preventDefault();
+    zone.classList.add("is-over");
+  });
+
+  editorSlotsEl.addEventListener("dragleave", (event) => {
+    const zone = event.target.closest(".slot-drop-zone");
+    if (zone) {
+      zone.classList.remove("is-over");
+    }
+  });
+
+  editorSlotsEl.addEventListener("drop", (event) => {
+    const zone = event.target.closest(".slot-drop-zone");
+    if (!zone) {
+      return;
+    }
+    event.preventDefault();
     zone.classList.remove("is-over");
-  }
-});
 
-editorSlotsEl.addEventListener("drop", (event) => {
-  const zone = event.target.closest(".slot-drop-zone");
-  if (!zone) {
-    return;
-  }
-  event.preventDefault();
-  zone.classList.remove("is-over");
+    const blockId = event.dataTransfer.getData("text/plain");
+    const slotIndex = Number(zone.dataset.slot);
+    if (!blockId || Number.isNaN(slotIndex)) {
+      return;
+    }
+    placeBlock(blockId, slotIndex);
+  });
 
-  const blockId = event.dataTransfer.getData("text/plain");
-  const slotIndex = Number(zone.dataset.slot);
-  if (!blockId || Number.isNaN(slotIndex)) {
-    return;
-  }
-  placeBlock(blockId, slotIndex);
-});
+  codeBankEl.addEventListener("dragstart", (event) => {
+    const block = event.target.closest(".code-block");
+    if (!block || !event.dataTransfer) {
+      return;
+    }
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", block.dataset.blockId);
+  });
 
-codeBankEl.addEventListener("dragstart", (event) => {
-  const block = event.target.closest(".code-block");
-  if (!block || !event.dataTransfer) {
-    return;
-  }
-  event.dataTransfer.effectAllowed = "move";
-  event.dataTransfer.setData("text/plain", block.dataset.blockId);
-});
+  codeBankEl.addEventListener("click", (event) => {
+    const block = event.target.closest(".code-block");
+    if (!block) {
+      return;
+    }
+    const clickedId = block.dataset.blockId;
+    state.selectedBlockId = state.selectedBlockId === clickedId ? null : clickedId;
+    renderBank();
+  });
 
-codeBankEl.addEventListener("click", (event) => {
-  const block = event.target.closest(".code-block");
-  if (!block) {
-    return;
-  }
-  const clickedId = block.dataset.blockId;
-  state.selectedBlockId = state.selectedBlockId === clickedId ? null : clickedId;
-  renderBank();
-});
+  editorSlotsEl.addEventListener("click", (event) => {
+    const actionBtn = event.target.closest("[data-action]");
+    if (actionBtn) {
+      const slotIndex = Number(actionBtn.dataset.slot);
+      if (Number.isNaN(slotIndex)) {
+        return;
+      }
+      const action = actionBtn.dataset.action;
+      if (action === "indent-left") {
+        updateIndent(slotIndex, -1);
+      }
+      if (action === "indent-right") {
+        updateIndent(slotIndex, 1);
+      }
+      if (action === "clear-slot") {
+        clearSlot(slotIndex);
+      }
+      return;
+    }
 
-editorSlotsEl.addEventListener("click", (event) => {
-  const actionBtn = event.target.closest("[data-action]");
-  if (actionBtn) {
-    const slotIndex = Number(actionBtn.dataset.slot);
+    const zone = event.target.closest(".slot-drop-zone");
+    if (!zone) {
+      return;
+    }
+    const slotIndex = Number(zone.dataset.slot);
     if (Number.isNaN(slotIndex)) {
       return;
     }
-    const action = actionBtn.dataset.action;
-    if (action === "indent-left") {
-      updateIndent(slotIndex, -1);
+
+    if (state.selectedBlockId) {
+      placeBlock(state.selectedBlockId, slotIndex);
+      return;
     }
-    if (action === "indent-right") {
-      updateIndent(slotIndex, 1);
+
+    const occupied = state.slots[slotIndex];
+    if (occupied) {
+      state.slots[slotIndex] = null;
+      state.indents[slotIndex] = 0;
+      state.selectedBlockId = occupied;
+      render();
     }
-    if (action === "clear-slot") {
-      clearSlot(slotIndex);
+  });
+
+  taskListEl.addEventListener("click", (event) => {
+    const button = event.target.closest("[data-task-index]");
+    if (!button) {
+      return;
     }
-    return;
-  }
+    const index = Number(button.dataset.taskIndex);
+    if (Number.isNaN(index)) {
+      return;
+    }
+    loadTask(index);
+  });
 
-  const zone = event.target.closest(".slot-drop-zone");
-  if (!zone) {
-    return;
-  }
-  const slotIndex = Number(zone.dataset.slot);
-  if (Number.isNaN(slotIndex)) {
-    return;
-  }
+  checkBtn.addEventListener("click", checkSolution);
+  resetBtn.addEventListener("click", resetPuzzle);
+  shuffleBtn.addEventListener("click", () => {
+    state.bankOrder = shuffle(state.bankOrder.slice());
+    state.selectedBlockId = null;
+    renderBank();
+  });
+}
 
-  if (state.selectedBlockId) {
-    placeBlock(state.selectedBlockId, slotIndex);
-    return;
-  }
+function disableActions() {
+  checkBtn.disabled = true;
+  resetBtn.disabled = true;
+  shuffleBtn.disabled = true;
+}
 
-  const occupied = state.slots[slotIndex];
-  if (occupied) {
-    state.slots[slotIndex] = null;
-    state.indents[slotIndex] = 0;
-    state.selectedBlockId = occupied;
-    render();
-  }
-});
+function loadTask(index) {
+  state.activeTaskIndex = clamp(index, 0, tasks.length - 1);
+  const task = getActiveTask();
 
-checkBtn.addEventListener("click", checkSolution);
-resetBtn.addEventListener("click", resetPuzzle);
-shuffleBtn.addEventListener("click", () => {
-  state.bankOrder = shuffle(state.bankOrder.slice());
+  state.slots = new Array(task.lines.length).fill(null);
+  state.indents = new Array(task.lines.length).fill(0);
+  state.bankOrder = shuffle(task.lines.map((line) => line.id));
   state.selectedBlockId = null;
-  renderBank();
-});
+
+  taskTitleEl.textContent = task.title;
+  taskDescriptionEl.textContent = task.description;
+  previewEl.hidden = true;
+
+  setResult("Збери програму в редакторі та перевір синтаксис.", "neutral");
+  renderTaskList();
+  render();
+}
+
+function getActiveTask() {
+  return tasks[state.activeTaskIndex];
+}
+
+function getActiveLineMap() {
+  return new Map(getActiveTask().lines.map((line) => [line.id, line]));
+}
+
+function renderTaskList() {
+  taskListEl.innerHTML = "";
+  tasks.forEach((task, index) => {
+    const item = document.createElement("li");
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "file-item task-btn";
+    button.dataset.taskIndex = String(index);
+    button.textContent = task.title;
+    if (index === state.activeTaskIndex) {
+      button.classList.add("is-active");
+    }
+    item.appendChild(button);
+    taskListEl.appendChild(item);
+  });
+}
 
 function render() {
   renderEditor();
@@ -149,9 +205,11 @@ function render() {
 }
 
 function renderEditor() {
-  editorSlotsEl.innerHTML = "";
+  const activeTask = getActiveTask();
+  const lineById = getActiveLineMap();
 
-  for (let i = 0; i < programLines.length; i += 1) {
+  editorSlotsEl.innerHTML = "";
+  for (let i = 0; i < activeTask.lines.length; i += 1) {
     const slotLineId = state.slots[i];
     const slot = document.createElement("li");
     slot.className = "editor-slot";
@@ -195,6 +253,8 @@ function renderEditor() {
 }
 
 function renderBank() {
+  const lineById = getActiveLineMap();
+
   codeBankEl.innerHTML = "";
   const used = new Set(state.slots.filter(Boolean));
   const available = state.bankOrder.filter((id) => !used.has(id));
@@ -202,7 +262,7 @@ function renderBank() {
   if (available.length === 0) {
     const donePlaceholder = document.createElement("div");
     donePlaceholder.className = "bank-placeholder";
-    donePlaceholder.textContent = "Усі блоки вже в редакторі. Перевір рішення або підкоригуй порядок.";
+    donePlaceholder.textContent = "Усі блоки в редакторі. Натисни «Перевірити» або поправ порядок.";
     codeBankEl.appendChild(donePlaceholder);
     return;
   }
@@ -228,6 +288,7 @@ function renderBank() {
 }
 
 function placeBlock(blockId, slotIndex) {
+  const lineById = getActiveLineMap();
   if (!lineById.has(blockId)) {
     return;
   }
@@ -269,10 +330,9 @@ function checkSolution() {
 
   const assembled = buildAssembledProgram();
   issues.push(...validateBlockSyntax(assembled));
-  issues.push(...validateNameDependencies(assembled));
 
   if (issues.length === 0) {
-    setResult("Готово. Синтаксис зібрано правильно.", "ok");
+    setResult("Готово. Базовий синтаксис Python зібрано правильно.", "ok");
     renderSolutionPreview();
     return;
   }
@@ -284,20 +344,19 @@ function checkSolution() {
 }
 
 function buildAssembledProgram() {
+  const lineById = getActiveLineMap();
+
   return state.slots
     .map((id, index) => {
       if (!id) {
         return null;
       }
       const line = lineById.get(id);
-      const analysis = analyzeLine(line.text);
       return {
         lineNumber: index + 1,
         text: line.text,
         indent: state.indents[index],
-        opensBlock: analysis.opensBlock,
-        defines: analysis.defines,
-        uses: analysis.uses
+        opensBlock: isBlockHeader(line.text)
       };
     })
     .filter(Boolean);
@@ -326,10 +385,10 @@ function validateBlockSyntax(lines) {
 
     if (prev && line.indent > prev.indent) {
       if (!prev.opensBlock) {
-        issues.push(`Рядок ${line.lineNumber}: зайвий відступ без попереднього ':'`);
+        issues.push(`Рядок ${line.lineNumber}: зайвий відступ без попереднього блоку.`);
       }
       if (line.indent !== prev.indent + 1) {
-        issues.push(`Рядок ${line.lineNumber}: відступ має збільшуватися лише на 1 рівень.`);
+        issues.push(`Рядок ${line.lineNumber}: відступ має збільшуватись тільки на 1 рівень.`);
       }
       indentStack.push(line.indent);
       continue;
@@ -344,98 +403,21 @@ function validateBlockSyntax(lines) {
     }
 
     if (prev && prev.opensBlock && line.indent <= prev.indent) {
-      issues.push(`Рядок ${prev.lineNumber}: після ':' потрібен вкладений блок.`);
+      issues.push(`Рядок ${prev.lineNumber}: після ':' потрібен вкладений рядок.`);
     }
   }
 
   const lastLine = lines[lines.length - 1];
   if (lastLine.opensBlock) {
-    issues.push(`Рядок ${lastLine.lineNumber}: після ':' бракує вкладених рядків.`);
+    issues.push(`Рядок ${lastLine.lineNumber}: після ':' бракує вкладеного блоку.`);
   }
 
   return dedupe(issues);
 }
 
-function validateNameDependencies(lines) {
-  const issues = [];
-  const knownNames = new Set(PY_GLOBALS);
-
-  for (const line of lines) {
-    for (const name of line.uses) {
-      if (!knownNames.has(name)) {
-        issues.push(`Рядок ${line.lineNumber}: '${name}' використано до оголошення.`);
-      }
-    }
-    for (const name of line.defines) {
-      knownNames.add(name);
-    }
-  }
-
-  return dedupe(issues);
-}
-
-function analyzeLine(rawText) {
+function isBlockHeader(rawText) {
   const text = rawText.trim();
-  const withoutStrings = stripStringLiterals(text);
-  const withoutAttributes = withoutStrings.replace(/\.[A-Za-z_][A-Za-z0-9_]*/g, "");
-  const defines = new Set();
-  const uses = new Set();
-
-  const forMatch = withoutAttributes.match(/^for\s+([A-Za-z_][A-Za-z0-9_]*)\s+in\s+(.+):$/);
-  if (forMatch) {
-    defines.add(forMatch[1]);
-    addNames(forMatch[2], uses);
-    return {
-      opensBlock: true,
-      defines: [...defines],
-      uses: [...uses]
-    };
-  }
-
-  const augAssignMatch = withoutAttributes.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*([+\-*/%]=)\s*(.+)$/);
-  if (augAssignMatch) {
-    const target = augAssignMatch[1];
-    uses.add(target);
-    addNames(augAssignMatch[3], uses);
-    defines.add(target);
-    return {
-      opensBlock: text.endsWith(":"),
-      defines: [...defines],
-      uses: [...uses]
-    };
-  }
-
-  const assignMatch = withoutAttributes.match(/^([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.+)$/);
-  if (assignMatch) {
-    defines.add(assignMatch[1]);
-    addNames(assignMatch[2], uses);
-    return {
-      opensBlock: text.endsWith(":"),
-      defines: [...defines],
-      uses: [...uses]
-    };
-  }
-
-  addNames(withoutAttributes, uses);
-
-  return {
-    opensBlock: text.endsWith(":"),
-    defines: [...defines],
-    uses: [...uses]
-  };
-}
-
-function addNames(fragment, targetSet) {
-  const tokens = fragment.match(/\b[A-Za-z_][A-Za-z0-9_]*\b/g) || [];
-  for (const token of tokens) {
-    if (!PY_KEYWORDS.has(token)) {
-      targetSet.add(token);
-    }
-  }
-}
-
-function stripStringLiterals(text) {
-  return text.replace(/"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*'/g, "");
+  return BLOCK_HEADER_REGEX.test(text);
 }
 
 function dedupe(items) {
@@ -443,6 +425,8 @@ function dedupe(items) {
 }
 
 function renderSolutionPreview() {
+  const lineById = getActiveLineMap();
+
   const code = state.slots
     .map((id, index) => {
       const line = lineById.get(id);
@@ -454,10 +438,11 @@ function renderSolutionPreview() {
 }
 
 function resetPuzzle() {
-  state.slots.fill(null);
-  state.indents.fill(0);
+  const task = getActiveTask();
+  state.slots = new Array(task.lines.length).fill(null);
+  state.indents = new Array(task.lines.length).fill(0);
   state.selectedBlockId = null;
-  state.bankOrder = shuffle(state.bankOrder.slice());
+  state.bankOrder = shuffle(task.lines.map((line) => line.id));
   render();
   setResult("Стан очищено. Збери програму ще раз.", "neutral");
   previewEl.hidden = true;
@@ -495,4 +480,31 @@ function shuffle(arr) {
 
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
+}
+
+function normalizeTasks(input) {
+  if (!Array.isArray(input)) {
+    return [];
+  }
+
+  return input
+    .map((task) => {
+      const lines = Array.isArray(task.lines)
+        ? task.lines
+            .filter((line) => line && typeof line.text === "string" && line.text.trim() !== "")
+            .map((line, index) => ({
+              id: typeof line.id === "string" ? line.id : `line-${index + 1}`,
+              text: line.text.trim(),
+              canonicalIndent: Number.isInteger(line.canonicalIndent) ? line.canonicalIndent : 0
+            }))
+        : [];
+
+      return {
+        id: String(task.id || "task"),
+        title: String(task.title || "Завдання"),
+        description: String(task.description || "Збери програму з блоків коду."),
+        lines
+      };
+    })
+    .filter((task) => task.lines.length > 0);
 }

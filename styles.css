@@ -145,9 +145,15 @@ body {
 
 .project-name {
   margin-top: 12px;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   font-size: 0.88rem;
   font-weight: 800;
+}
+
+.sidebar-hint {
+  margin: 0 0 8px;
+  color: #a6a6a6;
+  font-size: 0.75rem;
 }
 
 .file-list {
@@ -156,6 +162,8 @@ body {
   list-style: none;
   display: grid;
   gap: 2px;
+  max-height: calc(100vh - 145px);
+  overflow: auto;
 }
 
 .file-item {
@@ -170,6 +178,17 @@ body {
   background: #094771;
   border-color: #0e639c;
   color: #ffffff;
+}
+
+.task-btn {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  background: transparent;
+}
+
+.task-btn:hover {
+  background: #2f2f2f;
 }
 
 .editor-host {
@@ -262,6 +281,12 @@ body {
   letter-spacing: 0.08em;
   color: #a8a8a8;
   margin-bottom: 8px;
+}
+
+.task-title {
+  margin-bottom: 8px;
+  font: 700 0.88rem/1.3 "JetBrains Mono", "Consolas", monospace;
+  color: #d6ebff;
 }
 
 .hint {

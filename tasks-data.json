@@ -1,0 +1,1153 @@
+[
+  {
+    "id": "task-1",
+    "number": 1,
+    "title": "Завдання 1",
+    "description": "Результат: програма має вивести кількість голосних у слові.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "word = input(\"Введи слово: \")",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "vowels = \"аеєиіїоуюя\"",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-3",
+        "text": "count = 0",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-4",
+        "text": "for ch in word:",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-5",
+        "text": "if ch.lower() in vowels:",
+        "canonicalIndent": 1
+      },
+      {
+        "id": "line-6",
+        "text": "count += 1",
+        "canonicalIndent": 2
+      },
+      {
+        "id": "line-7",
+        "text": "print(\"Голосних:\", count)",
+        "canonicalIndent": 1
+      }
+    ]
+  },
+  {
+    "id": "task-2",
+    "number": 2,
+    "title": "Завдання 2",
+    "description": "Результат: програма має вивести результат ділення a на b.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "a = int(input(\"Введи a: \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "b = int(input(\"Введи b: \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-3",
+        "text": "result = a / b",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-4",
+        "text": "print(\"Результат:\", result)",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-3",
+    "number": 3,
+    "title": "Завдання 3",
+    "description": "Результат: програма має вивести повідомлення з віком.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "name = input(\"Ім'я: \")",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "age = int(input(\"Вік: \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-3",
+        "text": "print(f\"Привіт, {name}. Тобі {age} років.\")",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-4",
+    "number": 4,
+    "title": "Завдання 4",
+    "description": "Результат: програма має вивести привітання з ім'ям.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "name = input(\"Як тебе звати? \")",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "print(\"Привіт, \" + name + \"!\")",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-5",
+    "number": 5,
+    "title": "Завдання 5",
+    "description": "Результат: програма має вивести останній елемент списку.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "nums = [4, 8, 15, 16, 23, 42]",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "print(\"Останній:\", nums[-1])",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-6",
+    "number": 6,
+    "title": "Завдання 6",
+    "description": "Результат: програма має вивести суму всіх парних чисел від 1 до n.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "n = int(input(\"Введи n: \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "total = 0",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-3",
+        "text": "for i in range(1, n + 1):",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-4",
+        "text": "if i % 2 == 0:",
+        "canonicalIndent": 1
+      },
+      {
+        "id": "line-5",
+        "text": "total += i",
+        "canonicalIndent": 2
+      },
+      {
+        "id": "line-6",
+        "text": "print(\"Сума парних:\", total)",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-7",
+    "number": 7,
+    "title": "Завдання 7",
+    "description": "Результат: програма має вивести суму чисел від 1 до n.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "def sum_to(n):",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "if n <= 0:",
+        "canonicalIndent": 1
+      },
+      {
+        "id": "line-3",
+        "text": "return 0",
+        "canonicalIndent": 2
+      },
+      {
+        "id": "line-4",
+        "text": "return n + sum_to(n - 1)",
+        "canonicalIndent": 1
+      },
+      {
+        "id": "line-5",
+        "text": "n = int(input(\"Введи n: \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-6",
+        "text": "print(\"Сума:\", sum_to(n))",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-8",
+    "number": 8,
+    "title": "Завдання 8",
+    "description": "Результат: програма має вивести, чи число парне.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "n = int(input(\"Введи число: \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "if n % 2 == 0:",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-3",
+        "text": "print(\"Парне\")",
+        "canonicalIndent": 1
+      },
+      {
+        "id": "line-4",
+        "text": "else:",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-5",
+        "text": "print(\"Непарне\")",
+        "canonicalIndent": 1
+      }
+    ]
+  },
+  {
+    "id": "task-9",
+    "number": 9,
+    "title": "Завдання 9",
+    "description": "Результат: програма має вивести подвоєне число.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "text = input(\"Введи число: \")",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "num = int(text)",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-3",
+        "text": "print(\"Подвоєне:\", num * 2)",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-10",
+    "number": 10,
+    "title": "Завдання 10",
+    "description": "Результат: програма має вивести ім'я з анкети.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "person = {\"name\": \"Оля\", \"age\": 12}",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "print(\"Ім'я:\", person[\"name\"])",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-11",
+    "number": 11,
+    "title": "Завдання 11",
+    "description": "Результат: програма має додати число в список і вивести його.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "nums = [1, 2, 3]",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "nums.append(4)",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-3",
+        "text": "print(nums)",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-12",
+    "number": 12,
+    "title": "Завдання 12",
+    "description": "Результат: програма має вивести суму чисел від 1 до n.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "n = int(input(\"Введи n: \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "total = 0",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-3",
+        "text": "for i in range(1, n + 1):",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-4",
+        "text": "total += i",
+        "canonicalIndent": 1
+      },
+      {
+        "id": "line-5",
+        "text": "print(\"Сума:\", total)",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-13",
+    "number": 13,
+    "title": "Завдання 13",
+    "description": "Результат: програма має вивести випадкове число від 1 до 10.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "import random",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "print(random.randint(1, 10))",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-14",
+    "number": 14,
+    "title": "Завдання 14",
+    "description": "Результат: програма має вивести суму двох чисел.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "a = int(input(\"Введи перше число: \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "b = int(input(\"Введи друге число: \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-3",
+        "text": "print(\"Сума:\", a + b)",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-15",
+    "number": 15,
+    "title": "Завдання 15",
+    "description": "Результат: програма має вивести слово у верхньому регістрі.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "word = input(\"Введи слово: \")",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "print(\"Твоє слово: \" + word.upper())",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-16",
+    "number": 16,
+    "title": "Завдання 16",
+    "description": "Результат: програма має вивести середню швидкість.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "distance = int(input(\"Відстань (км): \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "time = int(input(\"Час (год): \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-3",
+        "text": "speed = distance / time",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-4",
+        "text": "print(\"Швидкість:\", speed)",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-17",
+    "number": 17,
+    "title": "Завдання 17",
+    "description": "Результат: програма має вивести подвоєне число.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "n = int(input(\"Введи число: \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "doubled = n * 2",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-3",
+        "text": "print(\"Подвоєне:\", doubled)",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-18",
+    "number": 18,
+    "title": "Завдання 18",
+    "description": "Результат: програма має вивести кількість учнів у класі.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "info = {\"class\": \"5-А\", \"students\": 28}",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "print(\"Кількість:\", info[\"students\"])",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-19",
+    "number": 19,
+    "title": "Завдання 19",
+    "description": "Результат: програма має вивести слово з доданим знаком оклику.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "word = \"Привіт\"",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "word = word + \"!\"",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-3",
+        "text": "print(word)",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-20",
+    "number": 20,
+    "title": "Завдання 20",
+    "description": "Результат: програма має вивести середнє арифметичне трьох чисел.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "a = int(input(\"Введи a: \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "b = int(input(\"Введи b: \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-3",
+        "text": "c = int(input(\"Введи c: \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-4",
+        "text": "avg = (a + b + c) / 3",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-5",
+        "text": "print(\"Середнє:\", avg)",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-21",
+    "number": 21,
+    "title": "Завдання 21",
+    "description": "Результат: програма має вивести найбільше число з трьох введених.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "a = int(input(\"Введи перше число: \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "b = int(input(\"Введи друге число: \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-3",
+        "text": "c = int(input(\"Введи третє число: \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-4",
+        "text": "max_num = a",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-5",
+        "text": "if b > max_num:",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-6",
+        "text": "max_num = b",
+        "canonicalIndent": 1
+      },
+      {
+        "id": "line-7",
+        "text": "if c > max_num:",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-8",
+        "text": "max_num = c",
+        "canonicalIndent": 1
+      },
+      {
+        "id": "line-9",
+        "text": "print(\"Найбільше число:\", max_num)",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-22",
+    "number": 22,
+    "title": "Завдання 22",
+    "description": "Результат: програма має вивести поточну дату.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "import datetime",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "print(datetime.date.today())",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-23",
+    "number": 23,
+    "title": "Завдання 23",
+    "description": "Результат: програма має вивести найбільше з двох чисел.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "a = int(input(\"Введи a: \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "b = int(input(\"Введи b: \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-3",
+        "text": "if a > b:",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-4",
+        "text": "print(\"Найбільше:\", a)",
+        "canonicalIndent": 1
+      },
+      {
+        "id": "line-5",
+        "text": "elif a == b:",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-6",
+        "text": "print(\"Числа рівні\")",
+        "canonicalIndent": 1
+      },
+      {
+        "id": "line-7",
+        "text": "else:",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-8",
+        "text": "print(\"Найбільше:\", b)",
+        "canonicalIndent": 1
+      }
+    ]
+  },
+  {
+    "id": "task-24",
+    "number": 24,
+    "title": "Завдання 24",
+    "description": "Результат: програма має вивести суму двох чисел.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "a = int(input(\"Введи перше число: \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "b = int(input(\"Введи друге число: \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-3",
+        "text": "print(\"Сума:\", a + b)",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-25",
+    "number": 25,
+    "title": "Завдання 25",
+    "description": "Результат: програма має вивести всі елементи списку у зворотному порядку.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "nums = [1, 2, 3, 4, 5]",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "for n in reversed(nums):",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-3",
+        "text": "print(n)",
+        "canonicalIndent": 1
+      }
+    ]
+  },
+  {
+    "id": "task-26",
+    "number": 26,
+    "title": "Завдання 26",
+    "description": "Результат: програма має вивести другий елемент у списку.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "items = [\"яблуко\", \"банан\", \"вишня\"]",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "print(\"Другий:\", items[1])",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-27",
+    "number": 27,
+    "title": "Завдання 27",
+    "description": "Результат: програма має вивести квадрат кожного числа від 1 до n.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "n = int(input(\"Введи n: \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "for i in range(1, n + 1):",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-3",
+        "text": "sq = i * i",
+        "canonicalIndent": 1
+      },
+      {
+        "id": "line-4",
+        "text": "print(i, \"->\", sq)",
+        "canonicalIndent": 1
+      }
+    ]
+  },
+  {
+    "id": "task-28",
+    "number": 28,
+    "title": "Завдання 28",
+    "description": "Результат: програма має вивести довжину речення.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "text = input(\"Введи речення: \")",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "print(\"Довжина:\", len(text))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-3",
+        "text": "print(\"Перше слово: \" + text.split()[0])",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-4",
+        "text": "print(\"Останнє слово: \" + text.split()[-1])",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-5",
+        "text": "print(\"Готово\")",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-29",
+    "number": 29,
+    "title": "Завдання 29",
+    "description": "Результат: програма має вивести оцінку за тест.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "grades = {\"math\": 10, \"english\": 9}",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "print(\"Оцінка з математики:\", grades[\"math\"])",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-30",
+    "number": 30,
+    "title": "Завдання 30",
+    "description": "Результат: програма має вивести периметр прямокутника.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "a = int(input(\"Сторона a: \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "b = int(input(\"Сторона b: \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-3",
+        "text": "perimeter = 2 * (a + b)",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-4",
+        "text": "print(\"Периметр:\", perimeter)",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-31",
+    "number": 31,
+    "title": "Завдання 31",
+    "description": "Результат: програма має вивести частку двох чисел.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "x = int(input(\"Введи x: \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "y = int(input(\"Введи y: \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-3",
+        "text": "print(\"Частка:\", x / y)",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-32",
+    "number": 32,
+    "title": "Завдання 32",
+    "description": "Результат: програма має вивести довжину рядка.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "text = input(\"Введи рядок: \")",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "length = len(text)",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-3",
+        "text": "print(\"Довжина:\", length)",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-33",
+    "number": 33,
+    "title": "Завдання 33",
+    "description": "Результат: програма має вивести перший символ слова.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "word = input(\"Введи слово: \")",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "print(\"Перший символ:\", word[0])",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-34",
+    "number": 34,
+    "title": "Завдання 34",
+    "description": "Результат: програма має вивести, скільки букв у слові.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "def count_letters(word):",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "return len(word)",
+        "canonicalIndent": 1
+      },
+      {
+        "id": "line-3",
+        "text": "word = input(\"Введи слово: \")",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-4",
+        "text": "if len(word) > 0:",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-5",
+        "text": "print(\"Кількість букв:\", count_letters(word))",
+        "canonicalIndent": 1
+      },
+      {
+        "id": "line-6",
+        "text": "else:",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-7",
+        "text": "print(\"Слово порожнє\")",
+        "canonicalIndent": 1
+      }
+    ]
+  },
+  {
+    "id": "task-35",
+    "number": 35,
+    "title": "Завдання 35",
+    "description": "Результат: програма має вивести довжину слова.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "word = input(\"Введи слово: \")",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "print(\"Довжина:\", len(word))",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-36",
+    "number": 36,
+    "title": "Завдання 36",
+    "description": "Результат: програма має вивести квадратний корінь числа.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "from math import sqrt",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "n = int(input(\"Введи число: \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-3",
+        "text": "print(\"Корінь:\", sqrt(n))",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-37",
+    "number": 37,
+    "title": "Завдання 37",
+    "description": "Результат: програма має вивести найбільше число у списку.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "nums = [3, 7, 2, 9, 5]",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "max_num = nums[0]",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-3",
+        "text": "for n in nums:",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-4",
+        "text": "if n > max_num:",
+        "canonicalIndent": 1
+      },
+      {
+        "id": "line-5",
+        "text": "max_num = n",
+        "canonicalIndent": 2
+      },
+      {
+        "id": "line-6",
+        "text": "print(\"Найбільше:\", max_num)",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-38",
+    "number": 38,
+    "title": "Завдання 38",
+    "description": "Результат: програма має вивести суму чисел від 1 до n.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "n = int(input(\"Введи n: \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "total = 0",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-3",
+        "text": "for i in range(1, n + 1):",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-4",
+        "text": "total += i",
+        "canonicalIndent": 1
+      },
+      {
+        "id": "line-5",
+        "text": "print(\"Сума:\", total)",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-39",
+    "number": 39,
+    "title": "Завдання 39",
+    "description": "Результат: програма має вивести довжину списку.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "items = [\"a\", \"b\", \"c\"]",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "length = len(items)",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-3",
+        "text": "print(\"Довжина:\", length)",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-40",
+    "number": 40,
+    "title": "Завдання 40",
+    "description": "Результат: програма має вивести площу квадрата.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "side_text = input(\"Сторона квадрата: \")",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "side = float(side_text)",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-3",
+        "text": "print(\"Площа:\", side * side)",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-41",
+    "number": 41,
+    "title": "Завдання 41",
+    "description": "Результат: програма має вивести кількість символів у рядку.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "def count_chars(text):",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "if text == \"\":",
+        "canonicalIndent": 1
+      },
+      {
+        "id": "line-3",
+        "text": "return 0",
+        "canonicalIndent": 2
+      },
+      {
+        "id": "line-4",
+        "text": "return 1 + count_chars(text[1:])",
+        "canonicalIndent": 1
+      },
+      {
+        "id": "line-5",
+        "text": "text = input(\"Введи рядок: \")",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-6",
+        "text": "print(\"Кількість:\", count_chars(text))",
+        "canonicalIndent": 0
+      }
+    ]
+  },
+  {
+    "id": "task-42",
+    "number": 42,
+    "title": "Завдання 42",
+    "description": "Результат: програма має вивести факторіал числа.",
+    "lines": [
+      {
+        "id": "line-1",
+        "text": "def factorial(n):",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-2",
+        "text": "if n <= 1:",
+        "canonicalIndent": 1
+      },
+      {
+        "id": "line-3",
+        "text": "return 1",
+        "canonicalIndent": 2
+      },
+      {
+        "id": "line-4",
+        "text": "return n * factorial(n - 1)",
+        "canonicalIndent": 1
+      },
+      {
+        "id": "line-5",
+        "text": "n = int(input(\"Введи число: \"))",
+        "canonicalIndent": 0
+      },
+      {
+        "id": "line-6",
+        "text": "print(\"Факторіал:\", factorial(n))",
+        "canonicalIndent": 0
+      }
+    ]
+  }
+]
