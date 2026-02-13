@@ -328,6 +328,12 @@ body {
   font: 700 0.72rem/1 "JetBrains Mono", "Consolas", monospace;
 }
 
+.task-example-subtitle {
+  margin: 0 0 4px;
+  color: #8fb7d6;
+  font: 700 0.72rem/1 "JetBrains Mono", "Consolas", monospace;
+}
+
 .task-example-code {
   margin: 0;
   white-space: pre-wrap;

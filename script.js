@@ -1077,9 +1077,31 @@ function normalizeTaskExamples(input) {
       continue;
     }
     const cleaned = rawExamples
-      .map((example) => String(example || "").trim())
+      .map((example) => {
+        if (typeof example === "string") {
+          const output = example.trim();
+          if (!output) {
+            return null;
+          }
+          return { input: [], output };
+        }
+
+        if (!example || typeof example !== "object") {
+          return null;
+        }
+
+        const input = Array.isArray(example.input)
+          ? example.input.map((value) => String(value)).filter((value) => value !== "")
+          : [];
+        const output = String(example.output || "").trim();
+        if (!output) {
+          return null;
+        }
+        return { input, output };
+      })
       .filter(Boolean)
       .slice(0, 3);
+
     if (cleaned.length > 0) {
       normalized[String(taskId)] = cleaned;
     }
@@ -1092,7 +1114,7 @@ function renderTaskExamples(task) {
     return;
   }
 
-  const fallback = ["Приклад виводу недоступний."];
+  const fallback = [{ input: [], output: "Приклад виводу недоступний." }];
   const examples = taskExamplesData[task.id] || fallback;
 
   taskExamplesEl.innerHTML = "";
@@ -1104,11 +1126,25 @@ function renderTaskExamples(task) {
     label.className = "task-example-label";
     label.textContent = `Приклад ${index + 1}`;
 
+    const inputTitle = document.createElement("p");
+    inputTitle.className = "task-example-subtitle";
+    inputTitle.textContent = "Ввід:";
+
+    const inputCode = document.createElement("pre");
+    inputCode.className = "task-example-code";
+    inputCode.textContent = example.input.length > 0 ? example.input.join("\n") : "(немає)";
+
+    const outputTitle = document.createElement("p");
+    outputTitle.className = "task-example-subtitle";
+    outputTitle.textContent = "Вивід:";
+
     const code = document.createElement("pre");
     code.className = "task-example-code";
     code.textContent = example;
 
-    item.append(label, code);
+    code.textContent = example.output;
+
+    item.append(label, inputTitle, inputCode, outputTitle, code);
     taskExamplesEl.appendChild(item);
   });
 }
