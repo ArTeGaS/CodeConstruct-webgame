@@ -259,7 +259,7 @@ function renderEditor() {
       const code = document.createElement("code");
       code.className = "code-line";
       const indentSpaces = " ".repeat(state.indents[i] * 4);
-      code.textContent = `${indentSpaces}${lineById.get(slotLineId).text}`;
+      renderHighlightedCode(code, `${indentSpaces}${lineById.get(slotLineId).text}`);
       zone.appendChild(code);
     } else {
       zone.classList.add("is-empty");
@@ -313,7 +313,7 @@ function renderBank() {
 
     const code = document.createElement("code");
     code.className = "code-line";
-    code.textContent = line.text;
+    renderHighlightedCode(code, line.text);
     block.appendChild(code);
 
     codeBankEl.appendChild(block);
@@ -937,6 +937,69 @@ function addNames(fragment, collector) {
       collector.push(token);
     }
   }
+}
+
+function renderHighlightedCode(element, text) {
+  element.innerHTML = highlightPythonLine(text);
+}
+
+function highlightPythonLine(text) {
+  const tokenPattern =
+    /#[^\n]*|(?:\b[furbFURB]{0,4})?(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')|\b\d+(?:\.\d+)?\b|\b[A-Za-z_][A-Za-z0-9_]*\b|==|!=|<=|>=|\+=|-=|\*=|\/=|%=|\/\/=|\*\*=|->|[+\-*/%<>=:()[\]{},.]|\S/gu;
+
+  let html = "";
+  let lastIndex = 0;
+  let match;
+
+  while ((match = tokenPattern.exec(text)) !== null) {
+    const token = match[0];
+    const start = match.index;
+    const end = start + token.length;
+
+    if (start > lastIndex) {
+      html += escapeHtml(text.slice(lastIndex, start));
+    }
+
+    let cls = "";
+    if (token.startsWith("#")) {
+      cls = "py-token-comment";
+    } else if (/^(?:[furbFURB]{0,4})?(?:"(?:\\.|[^"\\])*"|'(?:\\.|[^'\\])*')$/u.test(token)) {
+      cls = "py-token-string";
+    } else if (/^\d+(?:\.\d+)?$/u.test(token)) {
+      cls = "py-token-number";
+    } else if (/^[A-Za-z_][A-Za-z0-9_]*$/u.test(token)) {
+      if (PY_KEYWORDS.has(token)) {
+        cls = "py-token-keyword";
+      } else if (PY_BUILTINS.has(token)) {
+        cls = "py-token-builtin";
+      } else if (isFunctionCallAt(text, end)) {
+        cls = "py-token-function";
+      }
+    } else if (/^(==|!=|<=|>=|\+=|-=|\*=|\/=|%=|\/\/=|\*\*=|->|[+\-*/%<>=:])$/u.test(token)) {
+      cls = "py-token-operator";
+    }
+
+    html += cls ? `<span class="${cls}">${escapeHtml(token)}</span>` : escapeHtml(token);
+    lastIndex = end;
+  }
+
+  if (lastIndex < text.length) {
+    html += escapeHtml(text.slice(lastIndex));
+  }
+
+  return html;
+}
+
+function isFunctionCallAt(text, fromIndex) {
+  const tail = text.slice(fromIndex);
+  return /^\s*\(/u.test(tail);
+}
+
+function escapeHtml(text) {
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
 }
 
 function extractFStringExpressions(text) {

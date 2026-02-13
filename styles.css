@@ -430,6 +430,34 @@ body {
   font: 500 0.83rem/1.35 "JetBrains Mono", "Consolas", monospace;
 }
 
+.py-token-keyword {
+  color: #569cd6;
+}
+
+.py-token-string {
+  color: #ce9178;
+}
+
+.py-token-number {
+  color: #b5cea8;
+}
+
+.py-token-comment {
+  color: #6a9955;
+}
+
+.py-token-builtin {
+  color: #4ec9b0;
+}
+
+.py-token-function {
+  color: #dcdcaa;
+}
+
+.py-token-operator {
+  color: #d4d4d4;
+}
+
 .slot-tools {
   display: flex;
   gap: 4px;
