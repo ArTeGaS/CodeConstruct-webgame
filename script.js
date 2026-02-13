@@ -1,5 +1,6 @@
 ﻿const tasks = normalizeTasks(window.TASKS_DATA || []);
 const allLinesData = normalizeAllLines(window.ALL_LINES_DATA || []);
+const taskExamplesData = normalizeTaskExamples(window.TASK_EXAMPLES_DATA || {});
 const allLinesById = new Map(allLinesData.map((line) => [line.id, line]));
 const EXTRA_LINES_PER_TASK = 10;
 const BLOCK_HEADER_REGEX = /^(if|elif|else|for|while|def|class|try|except|finally|with|match|case)\b.*:\s*$/;
@@ -39,6 +40,7 @@ const shuffleBtn = document.getElementById("shuffle-btn");
 const taskListEl = document.getElementById("task-list");
 const taskTitleEl = document.getElementById("task-title");
 const taskDescriptionEl = document.getElementById("task-description");
+const taskExamplesEl = document.getElementById("task-examples");
 const taskCountEl = document.getElementById("task-count");
 
 init();
@@ -187,6 +189,7 @@ function loadTask(index) {
 
   taskTitleEl.textContent = formatTaskLabel(task);
   taskDescriptionEl.textContent = task.description;
+  renderTaskExamples(task);
   previewEl.hidden = true;
 
   setResult("Збери програму в редакторі та перевір синтаксис.", "neutral");
@@ -1061,6 +1064,53 @@ function formatTaskLabel(task) {
     return `Завдання ${number}`;
   }
   return String(task?.title || "Завдання");
+}
+
+function normalizeTaskExamples(input) {
+  if (!input || typeof input !== "object") {
+    return {};
+  }
+
+  const normalized = {};
+  for (const [taskId, rawExamples] of Object.entries(input)) {
+    if (!Array.isArray(rawExamples)) {
+      continue;
+    }
+    const cleaned = rawExamples
+      .map((example) => String(example || "").trim())
+      .filter(Boolean)
+      .slice(0, 3);
+    if (cleaned.length > 0) {
+      normalized[String(taskId)] = cleaned;
+    }
+  }
+  return normalized;
+}
+
+function renderTaskExamples(task) {
+  if (!taskExamplesEl) {
+    return;
+  }
+
+  const fallback = ["Приклад виводу недоступний."];
+  const examples = taskExamplesData[task.id] || fallback;
+
+  taskExamplesEl.innerHTML = "";
+  examples.slice(0, 3).forEach((example, index) => {
+    const item = document.createElement("article");
+    item.className = "task-example-item";
+
+    const label = document.createElement("p");
+    label.className = "task-example-label";
+    label.textContent = `Приклад ${index + 1}`;
+
+    const code = document.createElement("pre");
+    code.className = "task-example-code";
+    code.textContent = example;
+
+    item.append(label, code);
+    taskExamplesEl.appendChild(item);
+  });
 }
 
 function normalizeAllLines(input) {
