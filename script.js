@@ -185,7 +185,7 @@ function loadTask(index) {
   state.bankOrder = shuffle(state.bankPoolIds.slice());
   state.selectedBlockId = null;
 
-  taskTitleEl.textContent = task.title;
+  taskTitleEl.textContent = formatTaskLabel(task);
   taskDescriptionEl.textContent = task.description;
   previewEl.hidden = true;
 
@@ -220,7 +220,7 @@ function renderTaskList() {
     button.type = "button";
     button.className = "file-item task-btn";
     button.dataset.taskIndex = String(index);
-    button.textContent = task.title;
+    button.textContent = formatTaskLabel(task);
     if (index === state.activeTaskIndex) {
       button.classList.add("is-active");
     }
@@ -1052,6 +1052,14 @@ function normalizeTasks(input) {
       };
     })
     .filter((task) => task.lines.length > 0);
+}
+
+function formatTaskLabel(task) {
+  const number = Number(task?.number);
+  if (Number.isFinite(number)) {
+    return `Завдання ${number}`;
+  }
+  return String(task?.title || "Завдання");
 }
 
 function normalizeAllLines(input) {
