@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>CodeConstruct Python Puzzle</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">CodeConstruct • Python</div>
+    <div class="actions">
+      <button id="check-btn" class="btn btn-primary" type="button">Перевірити рішення</button>
+      <button id="reset-btn" class="btn" type="button">Скинути</button>
+      <button id="shuffle-btn" class="btn" type="button">Перемішати блоки</button>
+    </div>
+  </header>
+
+  <main class="workspace">
+    <aside class="panel files-panel">
+      <h2>Файли проекту</h2>
+      <p class="hint">Працюємо з `main.py`.</p>
+      <ul class="file-list">
+        <li class="file-item is-active">main.py</li>
+        <li class="file-item">README.md</li>
+        <li class="file-item">tests.md</li>
+      </ul>
+    </aside>
+
+    <section class="panel editor-panel">
+      <h2>Вікно редактора</h2>
+      <p class="hint">Збери програму в правильному порядку та вистав відступи.</p>
+      <ol id="editor-slots" class="editor-slots"></ol>
+      <div id="result" class="result" role="status" aria-live="polite"></div>
+      <pre id="solution-preview" class="solution-preview" hidden></pre>
+    </section>
+
+    <aside class="panel bank-panel">
+      <h2>Рядки коду проекту</h2>
+      <p class="hint">
+        Desktop: перетягуй блоки мишкою.<br>
+        Mobile: тап по блоку, потім тап по рядку в редакторі.
+      </p>
+      <div id="code-bank" class="code-bank"></div>
+    </aside>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
