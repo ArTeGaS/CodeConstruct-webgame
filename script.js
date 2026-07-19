@@ -2,6 +2,7 @@
 const allLinesData = normalizeAllLines(window.ALL_LINES_DATA || []);
 const taskExamplesData = normalizeTaskExamples(window.TASK_EXAMPLES_DATA || {});
 const allLinesById = new Map(allLinesData.map((line) => [line.id, line]));
+const STORAGE_KEY = "codeconstruct-player-progress-v1";
 const EXTRA_LINES_PER_TASK = 10;
 const BLOCK_HEADER_REGEX = /^(if|elif|else|for|while|def|class|try|except|finally|with|match|case)\b.*:\s*$/;
 const MAX_INDENT = 6;
@@ -27,7 +28,9 @@ const state = {
   indents: [],
   bankPoolIds: [],
   bankOrder: [],
-  selectedBlockId: null
+  selectedBlockId: null,
+  completedTaskIds: new Set(),
+  taskStates: {}
 };
 
 const editorSlotsEl = document.getElementById("editor-slots");
@@ -52,9 +55,10 @@ function init() {
     return;
   }
 
-  taskCountEl.textContent = `${tasks.length} завдання`;
+  restoreProgress();
+  updateTaskCount();
   renderTaskList();
-  loadTask(0);
+  loadTask(state.activeTaskIndex);
 
   editorSlotsEl.addEventListener("dragover", (event) => {
     const zone = event.target.closest(".slot-drop-zone");
@@ -147,6 +151,7 @@ function init() {
       state.indents[slotIndex] = 0;
       state.selectedBlockId = occupied;
       render();
+      saveProgress();
     }
   });
 
@@ -168,7 +173,10 @@ function init() {
     state.bankOrder = shuffle(state.bankOrder.slice());
     state.selectedBlockId = null;
     renderBank();
+    saveProgress();
   });
+
+  window.addEventListener("pagehide", saveProgress);
 }
 
 function disableActions() {
@@ -178,6 +186,10 @@ function disableActions() {
 }
 
 function loadTask(index) {
+  if (state.slots.length > 0) {
+    saveProgress();
+  }
+
   state.activeTaskIndex = clamp(index, 0, tasks.length - 1);
   const task = getActiveTask();
 
@@ -186,15 +198,26 @@ function loadTask(index) {
   state.bankPoolIds = generateTaskBankIds(task, EXTRA_LINES_PER_TASK);
   state.bankOrder = shuffle(state.bankPoolIds.slice());
   state.selectedBlockId = null;
+  restoreTaskState(task);
 
   taskTitleEl.textContent = formatTaskLabel(task);
   taskDescriptionEl.textContent = task.description;
   renderTaskExamples(task);
   previewEl.hidden = true;
 
-  setResult("Збери програму в редакторі та перевір синтаксис.", "neutral");
+  if (state.completedTaskIds.has(task.id)) {
+    setResult("Прогрес відновлено. Це завдання вже виконано.", "ok");
+    if (state.slots.every(Boolean)) {
+      renderSolutionPreview();
+    }
+  } else if (state.slots.some(Boolean)) {
+    setResult("Незавершений прогрес відновлено. Продовжуй збирати програму.", "neutral");
+  } else {
+    setResult("Збери програму в редакторі та перевір синтаксис.", "neutral");
+  }
   renderTaskList();
   render();
+  saveProgress();
 }
 
 function getActiveTask() {
@@ -223,7 +246,12 @@ function renderTaskList() {
     button.type = "button";
     button.className = "file-item task-btn";
     button.dataset.taskIndex = String(index);
-    button.textContent = formatTaskLabel(task);
+    const isCompleted = state.completedTaskIds.has(task.id);
+    button.textContent = `${isCompleted ? "✓ " : ""}${formatTaskLabel(task)}`;
+    if (isCompleted) {
+      button.classList.add("is-completed");
+      button.setAttribute("aria-label", `${formatTaskLabel(task)} — виконано`);
+    }
     if (index === state.activeTaskIndex) {
       button.classList.add("is-active");
     }
@@ -329,6 +357,7 @@ function placeBlock(blockId, slotIndex) {
   state.slots[slotIndex] = blockId;
   state.selectedBlockId = null;
   render();
+  saveProgress();
 }
 
 function removeBlockFromSlots(blockId) {
@@ -344,6 +373,7 @@ function clearSlot(slotIndex) {
   state.slots[slotIndex] = null;
   state.indents[slotIndex] = 0;
   render();
+  saveProgress();
 }
 
 function updateIndent(slotIndex, diff) {
@@ -352,6 +382,7 @@ function updateIndent(slotIndex, diff) {
   }
   state.indents[slotIndex] = clamp(state.indents[slotIndex] + diff, 0, MAX_INDENT);
   renderEditor();
+  saveProgress();
 }
 
 function checkSolution() {
@@ -367,8 +398,12 @@ function checkSolution() {
   issues.push(...validateProgramSemantics(assembled));
 
   if (issues.length === 0) {
+    state.completedTaskIds.add(getActiveTask().id);
+    updateTaskCount();
+    renderTaskList();
     setResult("Готово. Базовий синтаксис Python і залежності імен коректні.", "ok");
     renderSolutionPreview();
+    saveProgress();
     return;
   }
 
@@ -1057,6 +1092,7 @@ function resetPuzzle() {
   render();
   setResult("Стан очищено. Збери програму ще раз.", "neutral");
   previewEl.hidden = true;
+  saveProgress();
 }
 
 function setResult(message, type) {
@@ -1092,6 +1128,106 @@ function shuffle(arr) {
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
+
+function updateTaskCount() {
+  const completedCount = state.completedTaskIds.size;
+  taskCountEl.textContent = `${tasks.length} завдань · ${completedCount} виконано`;
+}
+
+function restoreProgress() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+    if (!saved || saved.version !== 1 || !saved.tasks || typeof saved.tasks !== "object") {
+      return;
+    }
+
+    const validTaskIds = new Set(tasks.map((task) => task.id));
+    state.taskStates = saved.tasks;
+    state.completedTaskIds = new Set(
+      Array.isArray(saved.completedTaskIds)
+        ? saved.completedTaskIds.filter((id) => validTaskIds.has(id))
+        : []
+    );
+
+    const savedIndex = tasks.findIndex((task) => task.id === saved.activeTaskId);
+    if (savedIndex >= 0) {
+      state.activeTaskIndex = savedIndex;
+    }
+  } catch (error) {
+    console.warn("Не вдалося відновити локальний прогрес:", error);
+  }
+}
+
+function restoreTaskState(task) {
+  const saved = state.taskStates[task.id];
+  if (!saved || typeof saved !== "object") {
+    return;
+  }
+
+  const ownIds = task.lines.map((line) => line.id);
+  const knownIds = new Set(allLinesById.keys());
+  const savedPool = Array.isArray(saved.bankPoolIds)
+    ? saved.bankPoolIds.filter((id) => knownIds.has(id))
+    : [];
+  state.bankPoolIds = [...new Set([...ownIds, ...savedPool])];
+
+  const poolIds = new Set(state.bankPoolIds);
+  const savedOrder = Array.isArray(saved.bankOrder)
+    ? saved.bankOrder.filter((id) => poolIds.has(id))
+    : [];
+  state.bankOrder = [...new Set([...savedOrder, ...state.bankPoolIds])];
+
+  const usedIds = new Set();
+  state.slots = new Array(task.lines.length).fill(null).map((_, index) => {
+    const id = Array.isArray(saved.slots) ? saved.slots[index] : null;
+    if (!poolIds.has(id) || usedIds.has(id)) {
+      return null;
+    }
+    usedIds.add(id);
+    return id;
+  });
+
+  state.indents = new Array(task.lines.length).fill(0).map((_, index) => {
+    const value = Array.isArray(saved.indents) ? Number(saved.indents[index]) : 0;
+    return Number.isFinite(value) ? clamp(Math.trunc(value), 0, MAX_INDENT) : 0;
+  });
+}
+
+function saveProgress() {
+  const task = getActiveTask();
+  if (!task || state.slots.length !== task.lines.length) {
+    return;
+  }
+
+  state.taskStates[task.id] = {
+    slots: state.slots.slice(),
+    indents: state.indents.slice(),
+    bankPoolIds: state.bankPoolIds.slice(),
+    bankOrder: state.bankOrder.slice()
+  };
+
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({
+      version: 1,
+      activeTaskId: task.id,
+      completedTaskIds: [...state.completedTaskIds],
+      tasks: state.taskStates
+    }));
+  } catch (error) {
+    console.warn("Не вдалося зберегти локальний прогрес:", error);
+  }
+}
+
+window.render_game_to_text = () => JSON.stringify({
+  mode: "code-puzzle",
+  activeTaskId: getActiveTask()?.id || null,
+  activeTaskIndex: state.activeTaskIndex,
+  completedTaskIds: [...state.completedTaskIds],
+  filledSlots: state.slots.filter(Boolean).length,
+  totalSlots: state.slots.length
+});
+
+window.advanceTime = () => {};
 
 function normalizeTasks(input) {
   if (!Array.isArray(input)) {

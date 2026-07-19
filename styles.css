@@ -211,6 +211,14 @@ body {
   background: #2f2f2f;
 }
 
+.task-btn.is-completed {
+  color: #9fe3b2;
+}
+
+.task-btn.is-completed.is-active {
+  color: #ffffff;
+}
+
 .editor-host {
   min-width: 0;
   min-height: 0;
