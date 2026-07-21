@@ -735,27 +735,6 @@ window.ALL_LINES_DATA = [
     "taskTitle": "Завдання 28"
   },
   {
-    "id": "task-28::line-3::3",
-    "rawId": "line-3",
-    "text": "print(\"Перше слово: \" + text.split()[0])",
-    "taskId": "task-28",
-    "taskTitle": "Завдання 28"
-  },
-  {
-    "id": "task-28::line-4::4",
-    "rawId": "line-4",
-    "text": "print(\"Останнє слово: \" + text.split()[-1])",
-    "taskId": "task-28",
-    "taskTitle": "Завдання 28"
-  },
-  {
-    "id": "task-28::line-5::5",
-    "rawId": "line-5",
-    "text": "print(\"Готово\")",
-    "taskId": "task-28",
-    "taskTitle": "Завдання 28"
-  },
-  {
     "id": "task-29::line-1::1",
     "rawId": "line-1",
     "text": "grades = {\"math\": 10, \"english\": 9}",

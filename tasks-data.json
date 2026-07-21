@@ -992,21 +992,6 @@
         "id": "line-2",
         "text": "print(\"Довжина:\", len(text))",
         "canonicalIndent": 0
-      },
-      {
-        "id": "line-3",
-        "text": "print(\"Перше слово: \" + text.split()[0])",
-        "canonicalIndent": 0
-      },
-      {
-        "id": "line-4",
-        "text": "print(\"Останнє слово: \" + text.split()[-1])",
-        "canonicalIndent": 0
-      },
-      {
-        "id": "line-5",
-        "text": "print(\"Готово\")",
-        "canonicalIndent": 0
       }
     ]
   },

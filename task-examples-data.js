@@ -571,21 +571,21 @@ window.TASK_EXAMPLES_DATA = {
   "task-28": [
     {
       "input": [
-        "hello"
+        "Привіт світ"
       ],
-      "output": "Довжина: 5\nПерше слово: hello\nОстаннє слово: hello\nГотово"
+      "output": "Довжина: 11"
     },
     {
       "input": [
-        "python"
+        "Я люблю Python"
       ],
-      "output": "Довжина: 6\nПерше слово: python\nОстаннє слово: python\nГотово"
+      "output": "Довжина: 14"
     },
     {
       "input": [
-        "code"
+        "Код працює"
       ],
-      "output": "Довжина: 4\nПерше слово: code\nОстаннє слово: code\nГотово"
+      "output": "Довжина: 10"
     }
   ],
   "task-17": [
